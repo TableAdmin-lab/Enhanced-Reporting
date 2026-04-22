@@ -1,0 +1,927 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>YOCO | Dashboards Portal</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&family=Inter:wght@400;500&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <style>
+        :root {
+            --bg-black: #050507;
+            --fraud-accent: #ff9d00;
+            --sales-accent: #00d1ff;
+            --glass-bg: rgba(20, 20, 25, 0.6);
+            --glass-border: rgba(255, 255, 255, 0.08);
+            --text-main: #ffffff;
+            --text-muted: #888888;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        .hidden { display: none !important; }
+
+        body {
+            background-color: var(--bg-black);
+            color: var(--text-main);
+            font-family: 'Outfit', sans-serif;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: space-between;
+            overflow: hidden;
+            padding: 1.5rem 2rem 1rem;
+        }
+
+        /* ─── Header ─── */
+        header {
+            width: 100%;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            max-width: 1200px;
+        }
+        .logo { font-size: 1.4rem; font-weight: 800; letter-spacing: 0.3em; text-transform: uppercase; color: #fff; }
+        .header-controls { display: flex; gap: 1rem; align-items: center; }
+        .theme-toggle {
+            background: none; border: none; color: var(--text-muted); cursor: pointer;
+            padding: 0.5rem; border-radius: 50%; display: flex; align-items: center; justify-content: center; transition: all 0.3s;
+        }
+        .theme-toggle:hover { color: #fff; background: rgba(255,255,255,0.08); }
+        .theme-toggle svg { width: 1.4rem; height: 1.4rem; }
+        .import-btn {
+            background: var(--glass-bg); border: 1px solid var(--glass-border); color: #fff;
+            padding: 0.55rem 1.1rem; border-radius: 0.8rem; font-family: 'Inter', sans-serif;
+            font-size: 0.7rem; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase;
+            cursor: pointer; display: flex; align-items: center; gap: 0.5rem; transition: all 0.3s; backdrop-filter: blur(10px);
+        }
+        .import-btn:hover { background: rgba(255,255,255,0.08); transform: translateY(-1px); }
+        .import-btn.loaded {
+            border-color: rgba(0, 200, 83, 0.4);
+            background: rgba(0, 200, 83, 0.1);
+            color: #00e676;
+        }
+        .import-btn.loaded:hover { background: rgba(0, 200, 83, 0.15); }
+        .import-status {
+            position: fixed; top: 1.5rem; left: 50%; transform: translateX(-50%);
+            background: linear-gradient(135deg, #00c853, #00e676); color: #000;
+            padding: 0.5rem 1.5rem; border-radius: 2rem; font-size: 0.75rem; font-weight: 800;
+            z-index: 1000; box-shadow: 0 8px 20px rgba(0,200,83,0.3); display: none;
+        }
+        .import-status.cleared {
+            background: linear-gradient(135deg, #ef4444, #f87171);
+            color: #fff;
+            box-shadow: 0 8px 20px rgba(239,68,68,0.3);
+        }
+
+        /* ─── Clear Button ─── */
+        .clear-btn {
+            background: none; border: none; cursor: pointer;
+            padding: 0.5rem; border-radius: 50%; display: flex; align-items: center; justify-content: center;
+            transition: all 0.3s; color: #ef4444;
+        }
+        .clear-btn:hover { background: rgba(239, 68, 68, 0.15); transform: scale(1.1); }
+        .clear-btn svg { width: 1.3rem; height: 1.3rem; }
+
+        /* ─── Custom Modal ─── */
+        .modal-overlay {
+            position: fixed; inset: 0; z-index: 2000;
+            background: rgba(0,0,0,0.7); backdrop-filter: blur(8px);
+            display: flex; align-items: center; justify-content: center;
+            opacity: 0; pointer-events: none; transition: opacity 0.3s ease;
+        }
+        .modal-overlay.show { opacity: 1; pointer-events: all; }
+        .modal-box {
+            background: #1a1a2e; border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 1.5rem; padding: 2.5rem; max-width: 380px; width: 90%;
+            text-align: center; transform: scale(0.9); transition: transform 0.3s ease;
+            box-shadow: 0 25px 60px rgba(0,0,0,0.5);
+        }
+        .modal-overlay.show .modal-box { transform: scale(1); }
+        .modal-box .modal-icon {
+            width: 56px; height: 56px; border-radius: 50%;
+            background: rgba(239, 68, 68, 0.1); border: 2px solid rgba(239, 68, 68, 0.3);
+            display: flex; align-items: center; justify-content: center;
+            margin: 0 auto 1.2rem;
+        }
+        .modal-box .modal-icon svg { width: 24px; height: 24px; color: #ef4444; }
+        .modal-box h3 { font-size: 1.2rem; font-weight: 800; margin-bottom: 0.5rem; }
+        .modal-box p { font-size: 0.8rem; color: var(--text-muted); line-height: 1.5; margin-bottom: 1.5rem; }
+        .modal-actions { display: flex; gap: 0.75rem; justify-content: center; }
+        .modal-actions button {
+            padding: 0.6rem 1.5rem; border-radius: 0.8rem; font-family: 'Inter', sans-serif;
+            font-size: 0.75rem; font-weight: 700; cursor: pointer; transition: all 0.2s;
+            border: none; text-transform: uppercase; letter-spacing: 0.05em;
+        }
+        .btn-cancel {
+            background: rgba(255,255,255,0.06); color: var(--text-muted);
+            border: 1px solid rgba(255,255,255,0.1) !important;
+        }
+        .btn-cancel:hover { background: rgba(255,255,255,0.1); color: #fff; }
+        .btn-danger {
+            background: #ef4444; color: #fff;
+            box-shadow: 0 4px 15px rgba(239,68,68,0.3);
+        }
+        .btn-danger:hover { background: #dc2626; transform: translateY(-1px); }
+        html.light .modal-box { background: #fff; border-color: rgba(0,0,0,0.1); }
+        html.light .modal-box h3 { color: #1a1a1a; }
+        html.light .btn-cancel { background: #f1f5f9; color: #64748b; border-color: #e2e8f0 !important; }
+
+        /* ─── Upload Modal ─── */
+        .upload-zone {
+            border: 2px dashed rgba(255,255,255,0.15);
+            border-radius: 1.2rem;
+            padding: 2rem 1.5rem;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-bottom: 1.2rem;
+        }
+        .upload-zone:hover {
+            border-color: #ff007a;
+            background: rgba(255, 0, 122, 0.05);
+        }
+        .upload-zone.dragover {
+            border-color: #ff007a;
+            background: rgba(255, 0, 122, 0.1);
+            transform: scale(1.02);
+        }
+        .upload-zone .upload-icon {
+            width: 48px; height: 48px;
+            margin: 0 auto 1rem;
+            border-radius: 50%;
+            background: rgba(255, 0, 122, 0.1);
+            border: 2px solid rgba(255, 0, 122, 0.25);
+            display: flex; align-items: center; justify-content: center;
+            animation: uploadPulse 2.5s ease-in-out infinite;
+        }
+        @keyframes uploadPulse {
+            0%, 100% { box-shadow: 0 0 0 0 rgba(255,0,122,0.2); }
+            50% { box-shadow: 0 0 0 12px rgba(255,0,122,0); }
+        }
+        .upload-zone .upload-icon svg { width: 22px; height: 22px; color: #ff007a; }
+        .upload-zone h4 { font-size: 0.85rem; font-weight: 800; margin-bottom: 0.3rem; }
+        .upload-zone p { font-size: 0.7rem; color: var(--text-muted); }
+        .btn-skip {
+            background: none; border: none; color: var(--text-muted);
+            font-family: 'Inter', sans-serif; font-size: 0.7rem;
+            cursor: pointer; padding: 0.5rem 1rem; transition: color 0.2s;
+            letter-spacing: 0.05em; text-transform: uppercase; font-weight: 700;
+        }
+        .btn-skip:hover { color: #fff; }
+        html.light .upload-zone { border-color: rgba(0,0,0,0.12); }
+        html.light .upload-zone:hover { border-color: #ff007a; background: rgba(255,0,122,0.03); }
+        html.light .upload-zone h4 { color: #1a1a1a; }
+        html.light .btn-skip { color: #999; }
+        html.light .btn-skip:hover { color: #333; }
+
+        /* ─── Welcome Tutorial Modal ─── */
+        .welcome-overlay {
+            position: fixed; inset: 0; z-index: 3000;
+            background: rgba(0,0,0,0.85); backdrop-filter: blur(12px);
+            display: flex; align-items: center; justify-content: center;
+            opacity: 0; pointer-events: none; transition: opacity 0.4s ease;
+        }
+        .welcome-overlay.show { opacity: 1; pointer-events: all; }
+        .welcome-box {
+            background: #1a1a2e; border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 1.8rem; padding: 2.5rem; max-width: 560px; width: 92%;
+            text-align: center; transform: scale(0.9) translateY(20px);
+            transition: transform 0.4s cubic-bezier(0.23,1,0.32,1);
+            box-shadow: 0 30px 80px rgba(0,0,0,0.6);
+        }
+        .welcome-overlay.show .welcome-box { transform: scale(1) translateY(0); }
+        .welcome-box .welcome-badge {
+            display: inline-block; padding: 0.3rem 1rem; border-radius: 2rem;
+            background: linear-gradient(135deg, #ff007a, #ff4da6);
+            font-size: 0.6rem; font-weight: 800; letter-spacing: 0.15em;
+            text-transform: uppercase; color: #fff; margin-bottom: 1rem;
+        }
+        .welcome-box h2 {
+            font-size: 1.6rem; font-weight: 800; margin-bottom: 0.4rem;
+            background: linear-gradient(135deg, #fff, #ccc);
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+        }
+        .welcome-box .subtitle {
+            font-size: 0.75rem; color: var(--text-muted); margin-bottom: 1.5rem;
+            line-height: 1.5;
+        }
+        .video-container {
+            position: relative; width: 100%; padding-bottom: 56.25%;
+            border-radius: 1rem; overflow: hidden; margin-bottom: 1.5rem;
+            background: #000; border: 1px solid rgba(255,255,255,0.06);
+        }
+        .video-container iframe {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            border: none;
+        }
+        .welcome-actions { display: flex; gap: 0.75rem; justify-content: center; }
+        .btn-continue {
+            background: linear-gradient(135deg, #ff007a, #ff4da6);
+            color: #fff; border: none; padding: 0.7rem 2rem;
+            border-radius: 0.8rem; font-family: 'Inter', sans-serif;
+            font-size: 0.75rem; font-weight: 700; cursor: pointer;
+            text-transform: uppercase; letter-spacing: 0.05em;
+            box-shadow: 0 4px 20px rgba(255,0,122,0.3);
+            transition: all 0.2s;
+        }
+        .btn-continue:hover { transform: translateY(-1px); box-shadow: 0 6px 25px rgba(255,0,122,0.4); }
+        html.light .welcome-box { background: #fff; border-color: rgba(0,0,0,0.1); }
+        html.light .welcome-box h2 { background: linear-gradient(135deg, #1a1a1a, #444); -webkit-background-clip: text; }
+
+        /* ─── Cards Layout ─── */
+        main {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 2.5rem;
+            width: 100%;
+            max-width: 1000px;
+            padding: 1rem 0;
+        }
+
+        .card {
+            position: relative;
+            width: 400px;
+            height: 500px;
+            background: var(--glass-bg);
+            backdrop-filter: blur(20px);
+            border: 1px solid var(--glass-border);
+            border-radius: 2rem;
+            padding: 2rem;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-end;
+            cursor: pointer;
+            text-decoration: none;
+            color: inherit;
+            overflow: hidden;
+            transition: all 0.45s cubic-bezier(0.23, 1, 0.32, 1);
+        }
+
+        .card::before {
+            content: '';
+            position: absolute; inset: 0;
+            border-radius: 2rem; padding: 1px;
+            background: linear-gradient(160deg, rgba(255,255,255,0.12), transparent 50%);
+            -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+            mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+            -webkit-mask-composite: xor; mask-composite: exclude;
+            pointer-events: none;
+        }
+
+        .card:hover { transform: translateY(-8px) scale(1.02); }
+        .card.sales:hover {
+            box-shadow: 0 0 80px -15px rgba(0,209,255,0.35), 0 25px 50px -12px rgba(0,0,0,0.5);
+            border-color: rgba(0,209,255,0.3);
+        }
+        .card.fraud:hover {
+            box-shadow: 0 0 80px -15px rgba(255,157,0,0.35), 0 25px 50px -12px rgba(0,0,0,0.5);
+            border-color: rgba(255,157,0,0.3);
+        }
+
+        /* ─── Icon Container ─── */
+        .icon-container {
+            position: absolute;
+            top: 1.8rem; left: 1.8rem; right: 1.8rem;
+            height: 240px;
+            background: rgba(0,0,0,0.35);
+            border: 1px solid rgba(255,255,255,0.04);
+            border-radius: 1.2rem;
+            display: flex; align-items: center; justify-content: center;
+            overflow: hidden;
+        }
+        .icon-container::after {
+            content: '';
+            position: absolute; inset: 0;
+            background: radial-gradient(circle at center, transparent 40%, rgba(0,0,0,0.5) 100%);
+            pointer-events: none;
+        }
+        .icon-container svg { width: 90%; height: 90%; position: relative; z-index: 1; }
+
+        /* ─── Card Content ─── */
+        .card-content h2 {
+            font-size: 2.2rem; font-weight: 800; line-height: 1.05;
+            margin-bottom: 0.4rem; color: #fff; letter-spacing: -0.02em;
+        }
+        .card-content p {
+            font-family: 'Inter', sans-serif; font-size: 0.65rem; font-weight: 700;
+            letter-spacing: 0.15em; text-transform: uppercase; color: var(--text-muted); margin-top: 0.4rem;
+        }
+
+        /* ═══════════════ SALES ANIMATION ═══════════════ */
+
+        /* Animated rising bars */
+        .sales-bar {
+            fill: var(--sales-accent);
+            opacity: 0.15;
+            animation: barGrow 2s ease-out forwards;
+        }
+        .sales-bar:nth-child(1) { animation-delay: 0.1s; }
+        .sales-bar:nth-child(2) { animation-delay: 0.2s; }
+        .sales-bar:nth-child(3) { animation-delay: 0.3s; }
+        .sales-bar:nth-child(4) { animation-delay: 0.4s; }
+        .sales-bar:nth-child(5) { animation-delay: 0.5s; }
+        .sales-bar:nth-child(6) { animation-delay: 0.6s; }
+        .sales-bar:nth-child(7) { animation-delay: 0.7s; }
+
+        @keyframes barGrow {
+            0% { transform: scaleY(0); opacity: 0; }
+            60% { opacity: 0.2; }
+            100% { transform: scaleY(1); opacity: 0.18; }
+        }
+
+        /* Animated trend line - draws itself */
+        .trend-line {
+            stroke: var(--sales-accent);
+            stroke-width: 2.5;
+            fill: none;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+            stroke-dasharray: 400;
+            stroke-dashoffset: 400;
+            animation: drawLine 2.5s ease-out 0.3s forwards;
+            filter: drop-shadow(0 0 6px var(--sales-accent));
+        }
+
+        @keyframes drawLine {
+            to { stroke-dashoffset: 0; }
+        }
+
+        /* Trend area fill */
+        .trend-area {
+            fill: url(#salesGradient);
+            opacity: 0;
+            animation: fadeArea 1s ease-out 2s forwards;
+        }
+        @keyframes fadeArea {
+            to { opacity: 0.15; }
+        }
+
+        /* Animated data dots */
+        .sales-dot {
+            fill: var(--sales-accent);
+            filter: drop-shadow(0 0 4px var(--sales-accent));
+            opacity: 0;
+            animation: dotPop 0.4s ease-out forwards;
+        }
+        .sales-dot:nth-child(1) { animation-delay: 0.8s; }
+        .sales-dot:nth-child(2) { animation-delay: 1s; }
+        .sales-dot:nth-child(3) { animation-delay: 1.2s; }
+        .sales-dot:nth-child(4) { animation-delay: 1.4s; }
+        .sales-dot:nth-child(5) { animation-delay: 1.6s; }
+        .sales-dot:nth-child(6) { animation-delay: 1.8s; }
+        .sales-dot:nth-child(7) { animation-delay: 2s; }
+
+        @keyframes dotPop {
+            0% { opacity: 0; r: 0; }
+            60% { r: 5; }
+            100% { opacity: 1; r: 3.5; }
+        }
+
+        /* Pulsing glow on dots after they appear */
+        .sales-dot-pulse {
+            fill: none;
+            stroke: var(--sales-accent);
+            opacity: 0;
+            animation: dotGlow 2.5s ease-in-out infinite;
+        }
+        .sales-dot-pulse:nth-child(1) { animation-delay: 2.2s; }
+        .sales-dot-pulse:nth-child(2) { animation-delay: 2.4s; }
+        .sales-dot-pulse:nth-child(3) { animation-delay: 2.6s; }
+
+        @keyframes dotGlow {
+            0%, 100% { opacity: 0; r: 3; stroke-width: 1; }
+            50% { opacity: 0.6; r: 8; stroke-width: 0.5; }
+        }
+
+        /* Moving currency symbols */
+        .currency-float {
+            font-family: 'Inter', sans-serif;
+            font-size: 8px;
+            font-weight: 700;
+            fill: var(--sales-accent);
+            opacity: 0;
+            animation: floatUp 4s ease-in-out infinite;
+        }
+        .currency-float:nth-child(1) { animation-delay: 0s; }
+        .currency-float:nth-child(2) { animation-delay: 1.3s; }
+        .currency-float:nth-child(3) { animation-delay: 2.6s; }
+        .currency-float:nth-child(4) { animation-delay: 3.9s; }
+
+        @keyframes floatUp {
+            0% { opacity: 0; transform: translateY(10px); }
+            15% { opacity: 0.3; }
+            50% { opacity: 0.15; }
+            85% { opacity: 0; }
+            100% { opacity: 0; transform: translateY(-30px); }
+        }
+
+        /* ═══════════════ FRAUD ANIMATION ═══════════════ */
+
+        .svg-fraud line.grid-line {
+            stroke: var(--fraud-accent);
+            stroke-width: 0.4;
+            opacity: 0.1;
+        }
+
+        .scanline {
+            stroke: var(--fraud-accent);
+            stroke-width: 2;
+            filter: drop-shadow(0 0 10px var(--fraud-accent));
+            animation: scan 3.5s infinite linear;
+            opacity: 0;
+        }
+        @keyframes scan {
+            0% { transform: translateY(-20px); opacity: 0; }
+            5% { opacity: 0.9; }
+            90% { opacity: 0.9; }
+            100% { transform: translateY(140px); opacity: 0; }
+        }
+
+        /* Warning triangle */
+        .fraud-warning {
+            fill: none;
+            stroke: var(--fraud-accent);
+            stroke-width: 1.5;
+            opacity: 0;
+            animation: warningPulse 3s ease-in-out infinite;
+            filter: drop-shadow(0 0 6px var(--fraud-accent));
+        }
+        @keyframes warningPulse {
+            0%, 100% { opacity: 0.1; transform: scale(0.95); }
+            50% { opacity: 0.5; transform: scale(1.05); }
+        }
+
+        .fraud-node {
+            fill: var(--fraud-accent);
+            filter: drop-shadow(0 0 5px var(--fraud-accent));
+            animation: fraudPulse 2s infinite alternate;
+        }
+        .fraud-node:nth-child(1) { animation-delay: 0s; }
+        .fraud-node:nth-child(2) { animation-delay: 0.5s; }
+        .fraud-node:nth-child(3) { animation-delay: 1s; }
+        .fraud-node:nth-child(4) { animation-delay: 1.5s; }
+        .fraud-node:nth-child(5) { animation-delay: 2s; }
+
+        @keyframes fraudPulse {
+            0% { opacity: 0.15; r: 1.5; }
+            100% { opacity: 1; r: 3.5; }
+        }
+
+        /* Radar sweep */
+        .radar-sweep {
+            fill: url(#radarGradient);
+            transform-origin: 80px 60px;
+            animation: radarSpin 4s linear infinite;
+        }
+        @keyframes radarSpin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        .radar-ring {
+            fill: none;
+            stroke: var(--fraud-accent);
+            opacity: 0.08;
+        }
+
+        /* ─── Footer ─── */
+        footer {
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 0.8rem;
+            padding-bottom: 0.5rem;
+        }
+        .progress-container {
+            width: 220px; height: 3px;
+            background: rgba(255,255,255,0.06);
+            border-radius: 2px; position: relative;
+        }
+        .progress-bar {
+            position: absolute; left: 0; top: 0;
+            height: 100%; width: 50%;
+            background: #ff007a; border-radius: 2px;
+            box-shadow: 0 0 8px #ff007a;
+            transition: width 0.5s cubic-bezier(0.65,0,0.35,1);
+        }
+        .nav-dots { display: flex; gap: 0.6rem; }
+        .dot {
+            width: 30px; height: 30px; border-radius: 50%;
+            background: rgba(30,30,30,0.5); border: 1px solid var(--glass-border);
+            color: var(--text-muted); display: flex; align-items: center; justify-content: center;
+            font-size: 0.7rem; font-weight: 700; cursor: pointer; transition: all 0.3s ease;
+        }
+        .dot.active {
+            background: #ff007a; color: #fff; border-color: #ff007a;
+            box-shadow: 0 0 15px rgba(255,0,122,0.4);
+        }
+
+        /* ─── Light Mode ─── */
+        html.light {
+            --bg-black: #f0f2f5; --text-main: #1a1a1a;
+            --glass-bg: rgba(255,255,255,0.7); --glass-border: rgba(0,0,0,0.08); --text-muted: #666;
+        }
+        html.light .logo { color: #1a1a1a; }
+        html.light .card-content h2 { color: #1a1a1a; }
+        html.light .icon-container { background: rgba(0,0,0,0.04); }
+
+        /* ─── Responsive ─── */
+        @media (max-width: 860px) {
+            body { overflow-y: auto; padding: 1rem; }
+            main { flex-direction: column; gap: 1.5rem; }
+            .card { width: 340px; height: 460px; }
+            .card-content h2 { font-size: 1.7rem; }
+        }
+    </style>
+</head>
+<body>
+    <div id="importStatus" class="import-status"></div>
+
+    <!-- Clear Data Modal -->
+    <div id="clearModal" class="modal-overlay">
+        <div class="modal-box">
+            <div class="modal-icon">
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+            </div>
+            <h3>Clear All Data?</h3>
+            <p>This will remove the imported report from the portal. Both dashboards will lose their loaded data.</p>
+            <div class="modal-actions">
+                <button class="btn-cancel" onclick="closeClearModal()">Cancel</button>
+                <button class="btn-danger" onclick="confirmClear()">Clear Data</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Welcome Tutorial Modal -->
+    <div id="welcomeModal" class="welcome-overlay">
+        <div class="welcome-box">
+            <div class="welcome-badge">New Here?</div>
+            <h2>Welcome to YOCO Portal</h2>
+            <p class="subtitle">Watch a quick walkthrough to learn how to use the dashboards, import reports, and analyze your data.</p>
+            <div class="video-container">
+                <iframe src="" id="tutorialVideo" allow="autoplay; encrypted-media" allowfullscreen></iframe>
+            </div>
+            <div class="welcome-actions">
+                <button class="btn-skip" onclick="dismissWelcome()">Skip Tutorial</button>
+                <button class="btn-continue" onclick="dismissWelcome()">Got It, Let's Go</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Upload Prompt Modal -->
+    <div id="uploadModal" class="modal-overlay">
+        <div class="modal-box">
+            <div class="upload-zone" id="uploadZone" onclick="document.getElementById('uploadFileInput').click()">
+                <div class="upload-icon">
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/></svg>
+                </div>
+                <h4>Import Sales Report</h4>
+                <p>Drop your .xlsx or .csv file here, or click to browse</p>
+            </div>
+            <input type="file" id="uploadFileInput" accept=".csv, .xlsx, .xls" class="hidden">
+            <button class="btn-skip" onclick="closeUploadModal()">Skip for now</button>
+        </div>
+    </div>
+
+    <header>
+        <div class="logo">YOCO</div>
+        <div class="header-controls">
+            <input type="file" id="globalFile" accept=".csv, .xlsx, .xls" class="hidden">
+            <button id="importBtn" onclick="handleImportClick()" class="import-btn">
+                <svg id="importIcon" width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/></svg>
+                <span id="importLabel">Import Report</span>
+            </button>
+            <button onclick="openClearModal()" class="clear-btn" title="Clear All Data">
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+            </button>
+            <button onclick="toggleTheme()" class="theme-toggle" title="Toggle Theme">
+                <svg id="themeIcon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"/>
+                </svg>
+            </button>
+        </div>
+    </header>
+
+    <main>
+        <!-- ═══ Sales Analytics Card ═══ -->
+        <a href="file:///Users/leoroyne/Desktop/INDEX2_Sales.html" class="card sales">
+            <div class="icon-container">
+                <svg viewBox="0 0 160 120">
+                    <defs>
+                        <linearGradient id="salesGradient" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="0%" stop-color="var(--sales-accent)" stop-opacity="0.3"/>
+                            <stop offset="100%" stop-color="var(--sales-accent)" stop-opacity="0"/>
+                        </linearGradient>
+                    </defs>
+
+                    <!-- Bars (grow from bottom) -->
+                    <g>
+                        <rect class="sales-bar" x="12" y="82" width="13" height="28" rx="2" style="transform-origin: 12px 110px;"/>
+                        <rect class="sales-bar" x="32" y="62" width="13" height="48" rx="2" style="transform-origin: 32px 110px;"/>
+                        <rect class="sales-bar" x="52" y="44" width="13" height="66" rx="2" style="transform-origin: 52px 110px;"/>
+                        <rect class="sales-bar" x="72" y="54" width="13" height="56" rx="2" style="transform-origin: 72px 110px;"/>
+                        <rect class="sales-bar" x="92" y="34" width="13" height="76" rx="2" style="transform-origin: 92px 110px;"/>
+                        <rect class="sales-bar" x="112" y="22" width="13" height="88" rx="2" style="transform-origin: 112px 110px;"/>
+                        <rect class="sales-bar" x="132" y="38" width="13" height="72" rx="2" style="transform-origin: 132px 110px;"/>
+                    </g>
+
+                    <!-- Trend area fill -->
+                    <path class="trend-area" d="M18,80 L38,60 L58,42 L78,52 L98,32 L118,20 L138,36 L138,110 L18,110 Z"/>
+
+                    <!-- Self-drawing trend line -->
+                    <polyline class="trend-line" points="18,80 38,60 58,42 78,52 98,32 118,20 138,36"/>
+
+                    <!-- Data dots -->
+                    <g>
+                        <circle class="sales-dot" cx="18" cy="80" r="0"/>
+                        <circle class="sales-dot" cx="38" cy="60" r="0"/>
+                        <circle class="sales-dot" cx="58" cy="42" r="0"/>
+                        <circle class="sales-dot" cx="78" cy="52" r="0"/>
+                        <circle class="sales-dot" cx="98" cy="32" r="0"/>
+                        <circle class="sales-dot" cx="118" cy="20" r="0"/>
+                        <circle class="sales-dot" cx="138" cy="36" r="0"/>
+                    </g>
+
+                    <!-- Pulsing rings on key data points -->
+                    <g>
+                        <circle class="sales-dot-pulse" cx="58" cy="42" r="3"/>
+                        <circle class="sales-dot-pulse" cx="118" cy="20" r="3"/>
+                        <circle class="sales-dot-pulse" cx="98" cy="32" r="3"/>
+                    </g>
+
+                    <!-- Floating currency symbols -->
+                    <g>
+                        <text class="currency-float" x="25" y="50">R</text>
+                        <text class="currency-float" x="75" y="30">R</text>
+                        <text class="currency-float" x="110" y="45">R</text>
+                        <text class="currency-float" x="55" y="65">R</text>
+                    </g>
+                </svg>
+            </div>
+            <div class="card-content">
+                <h2>Sales Analytics</h2>
+                <p>Revenue & Performance</p>
+            </div>
+        </a>
+
+        <!-- ═══ Fraud Detection Analytics Card ═══ -->
+        <a href="file:///Users/leoroyne/Desktop/INDEX1_Fraud.html" class="card fraud">
+            <div class="icon-container">
+                <svg viewBox="0 0 160 120">
+                    <defs>
+                        <radialGradient id="radarGradient" cx="50%" cy="50%" r="50%">
+                            <stop offset="0%" stop-color="var(--fraud-accent)" stop-opacity="0.15"/>
+                            <stop offset="100%" stop-color="var(--fraud-accent)" stop-opacity="0"/>
+                        </radialGradient>
+                    </defs>
+
+                    <!-- Grid lines -->
+                    <g>
+                        <line class="grid-line" x1="0" y1="20" x2="160" y2="20"/>
+                        <line class="grid-line" x1="0" y1="40" x2="160" y2="40"/>
+                        <line class="grid-line" x1="0" y1="60" x2="160" y2="60"/>
+                        <line class="grid-line" x1="0" y1="80" x2="160" y2="80"/>
+                        <line class="grid-line" x1="0" y1="100" x2="160" y2="100"/>
+                        <line class="grid-line" x1="20" y1="0" x2="20" y2="120"/>
+                        <line class="grid-line" x1="40" y1="0" x2="40" y2="120"/>
+                        <line class="grid-line" x1="60" y1="0" x2="60" y2="120"/>
+                        <line class="grid-line" x1="80" y1="0" x2="80" y2="120"/>
+                        <line class="grid-line" x1="100" y1="0" x2="100" y2="120"/>
+                        <line class="grid-line" x1="120" y1="0" x2="120" y2="120"/>
+                        <line class="grid-line" x1="140" y1="0" x2="140" y2="120"/>
+                    </g>
+
+                    <!-- Radar rings -->
+                    <circle class="radar-ring" cx="80" cy="60" r="15" stroke-width="0.5"/>
+                    <circle class="radar-ring" cx="80" cy="60" r="30" stroke-width="0.5"/>
+                    <circle class="radar-ring" cx="80" cy="60" r="45" stroke-width="0.5"/>
+
+                    <!-- Radar sweep -->
+                    <path class="radar-sweep" d="M80,60 L80,15 A45,45 0 0,1 112,33 Z"/>
+
+                    <!-- Scan line -->
+                    <line class="scanline" x1="0" y1="0" x2="160" y2="0"/>
+
+                    <!-- Warning triangle -->
+                    <path class="fraud-warning" d="M80,25 L95,50 L65,50 Z"/>
+                    <text x="77" y="47" fill="var(--fraud-accent)" font-size="12" font-weight="900"
+                          style="animation: warningPulse 3s ease-in-out infinite; opacity:0;">!</text>
+
+                    <!-- Alert dots -->
+                    <g>
+                        <circle class="fraud-node" cx="40" cy="60" r="2"/>
+                        <circle class="fraud-node" cx="120" cy="40" r="2"/>
+                        <circle class="fraud-node" cx="100" cy="85" r="2"/>
+                        <circle class="fraud-node" cx="55" cy="95" r="2"/>
+                        <circle class="fraud-node" cx="130" cy="70" r="2"/>
+                    </g>
+                </svg>
+            </div>
+            <div class="card-content">
+                <h2>Fraud Detection Analytics</h2>
+                <p>Risk & Anomalies</p>
+            </div>
+        </a>
+    </main>
+
+    <footer>
+        <div class="progress-container">
+            <div id="progressBar" class="progress-bar"></div>
+        </div>
+        <div class="nav-dots">
+            <div class="dot active" onclick="scrollToCard(0)">1</div>
+            <div class="dot" onclick="scrollToCard(1)">2</div>
+        </div>
+    </footer>
+
+    <script>
+        // ─── Theme ───
+        function toggleTheme() {
+            const isLight = document.documentElement.classList.toggle('light');
+            localStorage.theme = isLight ? 'light' : 'dark';
+            updateThemeIcon();
+        }
+        function updateThemeIcon() {
+            const isLight = document.documentElement.classList.contains('light');
+            document.getElementById('themeIcon').innerHTML = isLight
+                ? '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364-6.364l-.707.707M6.343 17.657l-.707.707M16.95 16.95l.707.707M7.757 7.757l.707.707M12 8a4 4 0 100 8 4 4 0 000-8z"/>'
+                : '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"/>';
+        }
+        if (localStorage.theme === 'light') document.documentElement.classList.add('light');
+        updateThemeIcon();
+
+        // ─── Import State ───
+        function updateImportState() {
+            const btn = document.getElementById('importBtn');
+            const label = document.getElementById('importLabel');
+            const icon = document.getElementById('importIcon');
+            const data = localStorage.getItem('yoco_portal_data');
+            if (data) {
+                try {
+                    const parsed = JSON.parse(data);
+                    const name = parsed.fileName || 'Report';
+                    const short = name.length > 18 ? name.substring(0, 15) + '...' : name;
+                    label.textContent = '✓ ' + short;
+                    btn.classList.add('loaded');
+                    icon.innerHTML = '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>';
+                } catch(e) {}
+            } else {
+                label.textContent = 'Import Report';
+                btn.classList.remove('loaded');
+                icon.innerHTML = '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/>';
+            }
+        }
+
+        function handleImportClick() {
+            const data = localStorage.getItem('yoco_portal_data');
+            if (data) {
+                // Already loaded — show a replace warning via modal-like toast
+                const s = document.getElementById('importStatus');
+                s.className = 'import-status cleared';
+                s.innerText = '⚠ A report is already loaded. Importing will replace it.';
+                s.style.display = 'block';
+                setTimeout(() => { s.style.display = 'none'; s.className = 'import-status'; }, 3000);
+            }
+            document.getElementById('globalFile').click();
+        }
+
+        // ─── Data Import ───
+        document.getElementById('globalFile').addEventListener('change', async (e) => {
+            const files = e.target.files;
+            if (!files.length) return;
+            const portalData = { sales: [], items: [], info: [], fileName: files[0].name, timestamp: Date.now() };
+            for (const file of files) {
+                if (file.name.endsWith('.xlsx') || file.name.endsWith('.xls')) {
+                    const data = await file.arrayBuffer();
+                    const wb = XLSX.read(data, { type: 'array' });
+                    wb.SheetNames.forEach(name => {
+                        const low = name.toLowerCase();
+                        const json = XLSX.utils.sheet_to_json(wb.Sheets[name]);
+                        if (low.includes('items')) portalData.items = portalData.items.concat(json);
+                        else if (low.includes('sales') && !low.includes('summary') && !low.includes('recon')) portalData.sales = portalData.sales.concat(json);
+                        else if (low.includes('information')) portalData.info = portalData.info.concat(XLSX.utils.sheet_to_json(wb.Sheets[name], { header: 1 }));
+                    });
+                }
+            }
+            if (portalData.sales.length) {
+                localStorage.setItem('yoco_portal_data', JSON.stringify(portalData));
+                const s = document.getElementById('importStatus');
+                s.className = 'import-status';
+                s.innerText = '✓ Report Imported Successfully';
+                s.style.display = 'block';
+                updateImportState();
+                setTimeout(() => s.style.display = 'none', 3000);
+            }
+        });
+
+        // ─── Clear Modal ───
+        function openClearModal() {
+            document.getElementById('clearModal').classList.add('show');
+        }
+        function closeClearModal() {
+            document.getElementById('clearModal').classList.remove('show');
+        }
+        function confirmClear() {
+            closeClearModal();
+            localStorage.removeItem('yoco_portal_data');
+            const s = document.getElementById('importStatus');
+            s.className = 'import-status cleared';
+            s.innerText = '🗑️ Data Cleared Successfully';
+            s.style.display = 'block';
+            updateImportState();
+            setTimeout(() => { s.style.display = 'none'; s.className = 'import-status'; showUploadModal(); }, 2000);
+        }
+
+        // ─── Upload Modal ───
+        function showUploadModal() {
+            document.getElementById('uploadModal').classList.add('show');
+        }
+        function closeUploadModal() {
+            document.getElementById('uploadModal').classList.remove('show');
+        }
+
+        // Drag & drop support
+        const uploadZone = document.getElementById('uploadZone');
+        uploadZone.addEventListener('dragover', (e) => { e.preventDefault(); uploadZone.classList.add('dragover'); });
+        uploadZone.addEventListener('dragleave', () => uploadZone.classList.remove('dragover'));
+        uploadZone.addEventListener('drop', (e) => {
+            e.preventDefault(); uploadZone.classList.remove('dragover');
+            const files = e.dataTransfer.files;
+            if (files.length) { processUploadFiles(files); }
+        });
+
+        document.getElementById('uploadFileInput').addEventListener('change', (e) => {
+            if (e.target.files.length) processUploadFiles(e.target.files);
+        });
+
+        async function processUploadFiles(files) {
+            const portalData = { sales: [], items: [], info: [], fileName: files[0].name, timestamp: Date.now() };
+            for (const file of files) {
+                if (file.name.endsWith('.xlsx') || file.name.endsWith('.xls')) {
+                    const data = await file.arrayBuffer();
+                    const wb = XLSX.read(data, { type: 'array' });
+                    wb.SheetNames.forEach(name => {
+                        const low = name.toLowerCase();
+                        const json = XLSX.utils.sheet_to_json(wb.Sheets[name]);
+                        if (low.includes('items')) portalData.items = portalData.items.concat(json);
+                        else if (low.includes('sales') && !low.includes('summary') && !low.includes('recon')) portalData.sales = portalData.sales.concat(json);
+                        else if (low.includes('information')) portalData.info = portalData.info.concat(XLSX.utils.sheet_to_json(wb.Sheets[name], { header: 1 }));
+                    });
+                }
+            }
+            if (portalData.sales.length) {
+                localStorage.setItem('yoco_portal_data', JSON.stringify(portalData));
+                closeUploadModal();
+                const s = document.getElementById('importStatus');
+                s.className = 'import-status';
+                s.innerText = '✓ Report Imported Successfully';
+                s.style.display = 'block';
+                updateImportState();
+                setTimeout(() => s.style.display = 'none', 3000);
+            }
+        }
+
+        // Initialize import state on load
+        updateImportState();
+
+        // ─── Welcome Tutorial ───
+        function showWelcome() {
+            document.getElementById('tutorialVideo').src = 'https://drive.google.com/file/d/1B8-K8LofVgYCPOq98ux1arntjurIpSYG/preview';
+            document.getElementById('welcomeModal').classList.add('show');
+        }
+        function dismissWelcome() {
+            document.getElementById('welcomeModal').classList.remove('show');
+            document.getElementById('tutorialVideo').src = ''; // stop video
+            localStorage.setItem('yoco_tutorial_seen', 'true');
+            // After tutorial, show upload prompt if no data
+            if (!localStorage.getItem('yoco_portal_data')) {
+                setTimeout(showUploadModal, 400);
+            }
+        }
+
+        // On load: show welcome if first visit, otherwise show upload if no data
+        if (!localStorage.getItem('yoco_tutorial_seen')) {
+            showWelcome();
+        } else if (!localStorage.getItem('yoco_portal_data')) {
+            showUploadModal();
+        }
+
+        // ─── Navigation Dots ───
+        function scrollToCard(index) {
+            const cards = document.querySelectorAll('.card');
+            const dots = document.querySelectorAll('.dot');
+            if (cards[index]) {
+                cards[index].scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'center' });
+                dots.forEach((d, i) => d.classList.toggle('active', i === index));
+                document.getElementById('progressBar').style.width = index === 0 ? '50%' : '100%';
+            }
+        }
+    </script>
+</body>
+</html>
