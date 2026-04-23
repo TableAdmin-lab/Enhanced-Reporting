@@ -1,13 +1,30 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="dark">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>YOCO | Dashboards Portal</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&family=Inter:wght@400;500&display=swap" rel="stylesheet">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: { extend: { colors: { darkBg: '#0f172a', darkCard: '#1e293b', darkBorder: '#334155' } } }
+        }
+    </script>
+    <script>
+        // Early theme init to prevent flash
+        if (localStorage.theme === 'light') {
+            document.documentElement.classList.replace('dark', 'light');
+        }
+    </script>
     <style>
         :root {
             --bg-black: #050507;
@@ -18,525 +35,191 @@
             --text-main: #ffffff;
             --text-muted: #888888;
         }
-
         * { margin: 0; padding: 0; box-sizing: border-box; }
         .hidden { display: none !important; }
-
         body {
             background-color: var(--bg-black);
             color: var(--text-main);
             font-family: 'Outfit', sans-serif;
             min-height: 100vh;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: space-between;
+            display: flex; flex-direction: column; align-items: center; justify-content: space-between;
             overflow: hidden;
             padding: 1.5rem 2rem 1rem;
+            transition: background-color 0.3s ease;
         }
+        body.spa-fraud-active {
+            display: block; overflow-y: auto; padding: 0;
+            font-family: 'Inter', sans-serif;
+        }
+        html.dark body.spa-fraud-active { background-color: #0f172a; color: #f8fafc; }
+        html.light body.spa-fraud-active { background-color: #f8fafc; color: #0f172a; }
+        body.spa-sales-active {
+            display: block; overflow-y: auto; padding: 0;
+            font-family: 'Inter', sans-serif;
+        }
+        html.dark body.spa-sales-active { background-color: #0f172a; color: #f8fafc; }
+        html.light body.spa-sales-active { background-color: #f8fafc; color: #0f172a; }
+
+        /* Sales Dashboard Styles */
+        .stat-label { font-size: 11px; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.05em; }
+        .stat-value { font-size: 24px; font-weight: 900; color: #0f172a; line-height: 1.2; }
+        html.dark .stat-value { color: #f8fafc; }
+        #view-sales .info-btn { cursor: pointer; opacity: 0.4; transition: all 0.2s; font-size: 14px; }
+        #view-sales .info-btn:hover { opacity: 1; color: #6366f1; transform: scale(1.1); }
+        .sales-modal-backdrop { background: rgba(15, 23, 42, 0.6); backdrop-filter: blur(8px); }
+        #sales-pdf-loading { display: none; position: fixed; top: 24px; right: 24px; z-index: 1000; }
 
         /* ─── Header ─── */
-        header {
-            width: 100%;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            max-width: 1200px;
-        }
-        .logo { font-size: 1.4rem; font-weight: 800; letter-spacing: 0.3em; text-transform: uppercase; color: #fff; }
-        .header-controls { display: flex; gap: 1rem; align-items: center; }
-        .theme-toggle {
-            background: none; border: none; color: var(--text-muted); cursor: pointer;
-            padding: 0.5rem; border-radius: 50%; display: flex; align-items: center; justify-content: center; transition: all 0.3s;
-        }
-        .theme-toggle:hover { color: #fff; background: rgba(255,255,255,0.08); }
-        .theme-toggle svg { width: 1.4rem; height: 1.4rem; }
-        .import-btn {
-            background: var(--glass-bg); border: 1px solid var(--glass-border); color: #fff;
-            padding: 0.55rem 1.1rem; border-radius: 0.8rem; font-family: 'Inter', sans-serif;
-            font-size: 0.7rem; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase;
-            cursor: pointer; display: flex; align-items: center; gap: 0.5rem; transition: all 0.3s; backdrop-filter: blur(10px);
-        }
-        .import-btn:hover { background: rgba(255,255,255,0.08); transform: translateY(-1px); }
-        .import-btn.loaded {
-            border-color: rgba(0, 200, 83, 0.4);
-            background: rgba(0, 200, 83, 0.1);
-            color: #00e676;
-        }
-        .import-btn.loaded:hover { background: rgba(0, 200, 83, 0.15); }
-        .import-status {
-            position: fixed; top: 1.5rem; left: 50%; transform: translateX(-50%);
-            background: linear-gradient(135deg, #00c853, #00e676); color: #000;
-            padding: 0.5rem 1.5rem; border-radius: 2rem; font-size: 0.75rem; font-weight: 800;
-            z-index: 1000; box-shadow: 0 8px 20px rgba(0,200,83,0.3); display: none;
-        }
-        .import-status.cleared {
-            background: linear-gradient(135deg, #ef4444, #f87171);
-            color: #fff;
-            box-shadow: 0 8px 20px rgba(239,68,68,0.3);
-        }
+        #view-landing header { width:100%; display:flex; justify-content:space-between; align-items:center; max-width:1200px; }
+        .logo { font-size:1.4rem; font-weight:800; letter-spacing:0.3em; text-transform:uppercase; color:#fff; }
+        .header-controls { display:flex; gap:1rem; align-items:center; }
+        .theme-toggle { background:none; border:none; color:var(--text-muted); cursor:pointer; padding:0.5rem; border-radius:50%; display:flex; align-items:center; justify-content:center; transition:all 0.3s; }
+        .theme-toggle:hover { color:#fff; background:rgba(255,255,255,0.08); }
+        .theme-toggle svg { width:1.4rem; height:1.4rem; }
+        .import-btn { background:var(--glass-bg); border:1px solid var(--glass-border); color:#fff; padding:0.55rem 1.1rem; border-radius:0.8rem; font-family:'Inter',sans-serif; font-size:0.7rem; font-weight:700; letter-spacing:0.05em; text-transform:uppercase; cursor:pointer; display:flex; align-items:center; gap:0.5rem; transition:all 0.3s; backdrop-filter:blur(10px); }
+        .import-btn:hover { background:rgba(255,255,255,0.08); transform:translateY(-1px); }
+        .import-btn.loaded { border-color:rgba(0,200,83,0.4); background:rgba(0,200,83,0.1); color:#00e676; }
+        .import-btn.loaded:hover { background:rgba(0,200,83,0.15); }
+        .import-status { position:fixed; top:1.5rem; left:50%; transform:translateX(-50%); background:linear-gradient(135deg,#00c853,#00e676); color:#000; padding:0.5rem 1.5rem; border-radius:2rem; font-size:0.75rem; font-weight:800; z-index:1000; box-shadow:0 8px 20px rgba(0,200,83,0.3); display:none; }
+        .import-status.cleared { background:linear-gradient(135deg,#ef4444,#f87171); color:#fff; box-shadow:0 8px 20px rgba(239,68,68,0.3); }
+        .clear-btn { background:none; border:none; cursor:pointer; padding:0.5rem; border-radius:50%; display:flex; align-items:center; justify-content:center; transition:all 0.3s; color:#ef4444; }
+        .clear-btn:hover { background:rgba(239,68,68,0.15); transform:scale(1.1); }
+        .clear-btn svg { width:1.3rem; height:1.3rem; }
 
-        /* ─── Clear Button ─── */
-        .clear-btn {
-            background: none; border: none; cursor: pointer;
-            padding: 0.5rem; border-radius: 50%; display: flex; align-items: center; justify-content: center;
-            transition: all 0.3s; color: #ef4444;
-        }
-        .clear-btn:hover { background: rgba(239, 68, 68, 0.15); transform: scale(1.1); }
-        .clear-btn svg { width: 1.3rem; height: 1.3rem; }
+        /* ─── Modals ─── */
+        .modal-overlay { position:fixed; inset:0; z-index:2000; background:rgba(0,0,0,0.7); backdrop-filter:blur(8px); display:flex; align-items:center; justify-content:center; opacity:0; pointer-events:none; transition:opacity 0.3s ease; }
+        .modal-overlay.show { opacity:1; pointer-events:all; }
+        .modal-box { background:#1a1a2e; border:1px solid rgba(255,255,255,0.08); border-radius:1.5rem; padding:2.5rem; max-width:380px; width:90%; text-align:center; transform:scale(0.9); transition:transform 0.3s ease; box-shadow:0 25px 60px rgba(0,0,0,0.5); }
+        .modal-overlay.show .modal-box { transform:scale(1); }
+        .modal-box .modal-icon { width:56px; height:56px; border-radius:50%; background:rgba(239,68,68,0.1); border:2px solid rgba(239,68,68,0.3); display:flex; align-items:center; justify-content:center; margin:0 auto 1.2rem; }
+        .modal-box .modal-icon svg { width:24px; height:24px; color:#ef4444; }
+        .modal-box h3 { font-size:1.2rem; font-weight:800; margin-bottom:0.5rem; }
+        .modal-box p { font-size:0.8rem; color:var(--text-muted); line-height:1.5; margin-bottom:1.5rem; }
+        .modal-actions { display:flex; gap:0.75rem; justify-content:center; }
+        .modal-actions button { padding:0.6rem 1.5rem; border-radius:0.8rem; font-family:'Inter',sans-serif; font-size:0.75rem; font-weight:700; cursor:pointer; transition:all 0.2s; border:none; text-transform:uppercase; letter-spacing:0.05em; }
+        .btn-cancel { background:rgba(255,255,255,0.06); color:var(--text-muted); border:1px solid rgba(255,255,255,0.1) !important; }
+        .btn-cancel:hover { background:rgba(255,255,255,0.1); color:#fff; }
+        .btn-danger { background:#ef4444; color:#fff; box-shadow:0 4px 15px rgba(239,68,68,0.3); }
+        .btn-danger:hover { background:#dc2626; transform:translateY(-1px); }
+        html.light .modal-box { background:#fff; border-color:rgba(0,0,0,0.1); }
+        html.light .modal-box h3 { color:#1a1a1a; }
+        html.light .btn-cancel { background:#f1f5f9; color:#64748b; border-color:#e2e8f0 !important; }
 
-        /* ─── Custom Modal ─── */
-        .modal-overlay {
-            position: fixed; inset: 0; z-index: 2000;
-            background: rgba(0,0,0,0.7); backdrop-filter: blur(8px);
-            display: flex; align-items: center; justify-content: center;
-            opacity: 0; pointer-events: none; transition: opacity 0.3s ease;
-        }
-        .modal-overlay.show { opacity: 1; pointer-events: all; }
-        .modal-box {
-            background: #1a1a2e; border: 1px solid rgba(255,255,255,0.08);
-            border-radius: 1.5rem; padding: 2.5rem; max-width: 380px; width: 90%;
-            text-align: center; transform: scale(0.9); transition: transform 0.3s ease;
-            box-shadow: 0 25px 60px rgba(0,0,0,0.5);
-        }
-        .modal-overlay.show .modal-box { transform: scale(1); }
-        .modal-box .modal-icon {
-            width: 56px; height: 56px; border-radius: 50%;
-            background: rgba(239, 68, 68, 0.1); border: 2px solid rgba(239, 68, 68, 0.3);
-            display: flex; align-items: center; justify-content: center;
-            margin: 0 auto 1.2rem;
-        }
-        .modal-box .modal-icon svg { width: 24px; height: 24px; color: #ef4444; }
-        .modal-box h3 { font-size: 1.2rem; font-weight: 800; margin-bottom: 0.5rem; }
-        .modal-box p { font-size: 0.8rem; color: var(--text-muted); line-height: 1.5; margin-bottom: 1.5rem; }
-        .modal-actions { display: flex; gap: 0.75rem; justify-content: center; }
-        .modal-actions button {
-            padding: 0.6rem 1.5rem; border-radius: 0.8rem; font-family: 'Inter', sans-serif;
-            font-size: 0.75rem; font-weight: 700; cursor: pointer; transition: all 0.2s;
-            border: none; text-transform: uppercase; letter-spacing: 0.05em;
-        }
-        .btn-cancel {
-            background: rgba(255,255,255,0.06); color: var(--text-muted);
-            border: 1px solid rgba(255,255,255,0.1) !important;
-        }
-        .btn-cancel:hover { background: rgba(255,255,255,0.1); color: #fff; }
-        .btn-danger {
-            background: #ef4444; color: #fff;
-            box-shadow: 0 4px 15px rgba(239,68,68,0.3);
-        }
-        .btn-danger:hover { background: #dc2626; transform: translateY(-1px); }
-        html.light .modal-box { background: #fff; border-color: rgba(0,0,0,0.1); }
-        html.light .modal-box h3 { color: #1a1a1a; }
-        html.light .btn-cancel { background: #f1f5f9; color: #64748b; border-color: #e2e8f0 !important; }
+        /* Upload Modal */
+        .upload-zone { border:2px dashed rgba(255,255,255,0.15); border-radius:1.2rem; padding:2rem 1.5rem; text-align:center; cursor:pointer; transition:all 0.3s ease; margin-bottom:1.2rem; }
+        .upload-zone:hover { border-color:#ff007a; background:rgba(255,0,122,0.05); }
+        .upload-zone.dragover { border-color:#ff007a; background:rgba(255,0,122,0.1); transform:scale(1.02); }
+        .upload-zone .upload-icon { width:48px; height:48px; margin:0 auto 1rem; border-radius:50%; background:rgba(255,0,122,0.1); border:2px solid rgba(255,0,122,0.25); display:flex; align-items:center; justify-content:center; animation:uploadPulse 2.5s ease-in-out infinite; }
+        @keyframes uploadPulse { 0%,100%{box-shadow:0 0 0 0 rgba(255,0,122,0.2);} 50%{box-shadow:0 0 0 12px rgba(255,0,122,0);} }
+        .upload-zone .upload-icon svg { width:22px; height:22px; color:#ff007a; }
+        .upload-zone h4 { font-size:0.85rem; font-weight:800; margin-bottom:0.3rem; }
+        .upload-zone p { font-size:0.7rem; color:var(--text-muted); }
+        .btn-skip { background:none; border:none; color:var(--text-muted); font-family:'Inter',sans-serif; font-size:0.7rem; cursor:pointer; padding:0.5rem 1rem; transition:color 0.2s; letter-spacing:0.05em; text-transform:uppercase; font-weight:700; }
+        .btn-skip:hover { color:#fff; }
+        html.light .upload-zone { border-color:rgba(0,0,0,0.12); }
+        html.light .upload-zone:hover { border-color:#ff007a; background:rgba(255,0,122,0.03); }
+        html.light .upload-zone h4 { color:#1a1a1a; }
+        html.light .btn-skip { color:#999; }
+        html.light .btn-skip:hover { color:#333; }
 
-        /* ─── Upload Modal ─── */
-        .upload-zone {
-            border: 2px dashed rgba(255,255,255,0.15);
-            border-radius: 1.2rem;
-            padding: 2rem 1.5rem;
-            text-align: center;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            margin-bottom: 1.2rem;
-        }
-        .upload-zone:hover {
-            border-color: #ff007a;
-            background: rgba(255, 0, 122, 0.05);
-        }
-        .upload-zone.dragover {
-            border-color: #ff007a;
-            background: rgba(255, 0, 122, 0.1);
-            transform: scale(1.02);
-        }
-        .upload-zone .upload-icon {
-            width: 48px; height: 48px;
-            margin: 0 auto 1rem;
-            border-radius: 50%;
-            background: rgba(255, 0, 122, 0.1);
-            border: 2px solid rgba(255, 0, 122, 0.25);
-            display: flex; align-items: center; justify-content: center;
-            animation: uploadPulse 2.5s ease-in-out infinite;
-        }
-        @keyframes uploadPulse {
-            0%, 100% { box-shadow: 0 0 0 0 rgba(255,0,122,0.2); }
-            50% { box-shadow: 0 0 0 12px rgba(255,0,122,0); }
-        }
-        .upload-zone .upload-icon svg { width: 22px; height: 22px; color: #ff007a; }
-        .upload-zone h4 { font-size: 0.85rem; font-weight: 800; margin-bottom: 0.3rem; }
-        .upload-zone p { font-size: 0.7rem; color: var(--text-muted); }
-        .btn-skip {
-            background: none; border: none; color: var(--text-muted);
-            font-family: 'Inter', sans-serif; font-size: 0.7rem;
-            cursor: pointer; padding: 0.5rem 1rem; transition: color 0.2s;
-            letter-spacing: 0.05em; text-transform: uppercase; font-weight: 700;
-        }
-        .btn-skip:hover { color: #fff; }
-        html.light .upload-zone { border-color: rgba(0,0,0,0.12); }
-        html.light .upload-zone:hover { border-color: #ff007a; background: rgba(255,0,122,0.03); }
-        html.light .upload-zone h4 { color: #1a1a1a; }
-        html.light .btn-skip { color: #999; }
-        html.light .btn-skip:hover { color: #333; }
-
-        /* ─── Welcome Tutorial Modal ─── */
-        .welcome-overlay {
-            position: fixed; inset: 0; z-index: 3000;
-            background: rgba(0,0,0,0.85); backdrop-filter: blur(12px);
-            display: flex; align-items: center; justify-content: center;
-            opacity: 0; pointer-events: none; transition: opacity 0.4s ease;
-        }
-        .welcome-overlay.show { opacity: 1; pointer-events: all; }
-        .welcome-box {
-            background: #1a1a2e; border: 1px solid rgba(255,255,255,0.08);
-            border-radius: 1.8rem; padding: 2.5rem; max-width: 560px; width: 92%;
-            text-align: center; transform: scale(0.9) translateY(20px);
-            transition: transform 0.4s cubic-bezier(0.23,1,0.32,1);
-            box-shadow: 0 30px 80px rgba(0,0,0,0.6);
-        }
-        .welcome-overlay.show .welcome-box { transform: scale(1) translateY(0); }
-        .welcome-box .welcome-badge {
-            display: inline-block; padding: 0.3rem 1rem; border-radius: 2rem;
-            background: linear-gradient(135deg, #ff007a, #ff4da6);
-            font-size: 0.6rem; font-weight: 800; letter-spacing: 0.15em;
-            text-transform: uppercase; color: #fff; margin-bottom: 1rem;
-        }
-        .welcome-box h2 {
-            font-size: 1.6rem; font-weight: 800; margin-bottom: 0.4rem;
-            background: linear-gradient(135deg, #fff, #ccc);
-            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
-        }
-        .welcome-box .subtitle {
-            font-size: 0.75rem; color: var(--text-muted); margin-bottom: 1.5rem;
-            line-height: 1.5;
-        }
-        .video-container {
-            position: relative; width: 100%; padding-bottom: 56.25%;
-            border-radius: 1rem; overflow: hidden; margin-bottom: 1.5rem;
-            background: #000; border: 1px solid rgba(255,255,255,0.06);
-        }
-        .video-container iframe {
-            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-            border: none;
-        }
-        .welcome-actions { display: flex; gap: 0.75rem; justify-content: center; }
-        .btn-continue {
-            background: linear-gradient(135deg, #ff007a, #ff4da6);
-            color: #fff; border: none; padding: 0.7rem 2rem;
-            border-radius: 0.8rem; font-family: 'Inter', sans-serif;
-            font-size: 0.75rem; font-weight: 700; cursor: pointer;
-            text-transform: uppercase; letter-spacing: 0.05em;
-            box-shadow: 0 4px 20px rgba(255,0,122,0.3);
-            transition: all 0.2s;
-        }
-        .btn-continue:hover { transform: translateY(-1px); box-shadow: 0 6px 25px rgba(255,0,122,0.4); }
-        html.light .welcome-box { background: #fff; border-color: rgba(0,0,0,0.1); }
-        html.light .welcome-box h2 { background: linear-gradient(135deg, #1a1a1a, #444); -webkit-background-clip: text; }
+        /* Welcome Tutorial Modal */
+        .welcome-overlay { position:fixed; inset:0; z-index:3000; background:rgba(0,0,0,0.85); backdrop-filter:blur(12px); display:flex; align-items:center; justify-content:center; opacity:0; pointer-events:none; transition:opacity 0.4s ease; }
+        .welcome-overlay.show { opacity:1; pointer-events:all; }
+        .welcome-box { background:#1a1a2e; border:1px solid rgba(255,255,255,0.08); border-radius:1.8rem; padding:2.5rem; max-width:560px; width:92%; text-align:center; transform:scale(0.9) translateY(20px); transition:transform 0.4s cubic-bezier(0.23,1,0.32,1); box-shadow:0 30px 80px rgba(0,0,0,0.6); }
+        .welcome-overlay.show .welcome-box { transform:scale(1) translateY(0); }
+        .welcome-box .welcome-badge { display:inline-block; padding:0.3rem 1rem; border-radius:2rem; background:linear-gradient(135deg,#ff007a,#ff4da6); font-size:0.6rem; font-weight:800; letter-spacing:0.15em; text-transform:uppercase; color:#fff; margin-bottom:1rem; }
+        .welcome-box h2 { font-size:1.6rem; font-weight:800; margin-bottom:0.4rem; background:linear-gradient(135deg,#fff,#ccc); -webkit-background-clip:text; -webkit-text-fill-color:transparent; }
+        .welcome-box .subtitle { font-size:0.75rem; color:var(--text-muted); margin-bottom:1.5rem; line-height:1.5; }
+        .video-container { position:relative; width:100%; padding-bottom:56.25%; border-radius:1rem; overflow:hidden; margin-bottom:1.5rem; background:#000; border:1px solid rgba(255,255,255,0.06); }
+        .video-container iframe { position:absolute; top:0; left:0; width:100%; height:100%; border:none; }
+        .welcome-actions { display:flex; gap:0.75rem; justify-content:center; }
+        .btn-continue { background:linear-gradient(135deg,#ff007a,#ff4da6); color:#fff; border:none; padding:0.7rem 2rem; border-radius:0.8rem; font-family:'Inter',sans-serif; font-size:0.75rem; font-weight:700; cursor:pointer; text-transform:uppercase; letter-spacing:0.05em; box-shadow:0 4px 20px rgba(255,0,122,0.3); transition:all 0.2s; }
+        .btn-continue:hover { transform:translateY(-1px); box-shadow:0 6px 25px rgba(255,0,122,0.4); }
+        html.light .welcome-box { background:#fff; border-color:rgba(0,0,0,0.1); }
+        html.light .welcome-box h2 { background:linear-gradient(135deg,#1a1a1a,#444); -webkit-background-clip:text; }
 
         /* ─── Cards Layout ─── */
-        main {
-            flex: 1;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 2.5rem;
-            width: 100%;
-            max-width: 1000px;
-            padding: 1rem 0;
-        }
+        #view-landing main { flex:1; display:flex; align-items:center; justify-content:center; gap:2.5rem; width:100%; max-width:1000px; padding:1rem 0; }
+        .card { position:relative; width:400px; height:500px; background:var(--glass-bg); backdrop-filter:blur(20px); border:1px solid var(--glass-border); border-radius:2rem; padding:2rem; display:flex; flex-direction:column; justify-content:flex-end; cursor:pointer; text-decoration:none; color:inherit; overflow:hidden; transition:all 0.45s cubic-bezier(0.23,1,0.32,1); }
+        .card::before { content:''; position:absolute; inset:0; border-radius:2rem; padding:1px; background:linear-gradient(160deg,rgba(255,255,255,0.12),transparent 50%); -webkit-mask:linear-gradient(#fff 0 0) content-box,linear-gradient(#fff 0 0); mask:linear-gradient(#fff 0 0) content-box,linear-gradient(#fff 0 0); -webkit-mask-composite:xor; mask-composite:exclude; pointer-events:none; }
+        .card:hover { transform:translateY(-8px) scale(1.02); }
+        .card.sales:hover { box-shadow:0 0 80px -15px rgba(0,209,255,0.35),0 25px 50px -12px rgba(0,0,0,0.5); border-color:rgba(0,209,255,0.3); }
+        .card.fraud:hover { box-shadow:0 0 80px -15px rgba(255,157,0,0.35),0 25px 50px -12px rgba(0,0,0,0.5); border-color:rgba(255,157,0,0.3); }
+        .icon-container { position:absolute; top:1.8rem; left:1.8rem; right:1.8rem; height:240px; background:rgba(0,0,0,0.35); border:1px solid rgba(255,255,255,0.04); border-radius:1.2rem; display:flex; align-items:center; justify-content:center; overflow:hidden; }
+        .icon-container::after { content:''; position:absolute; inset:0; background:radial-gradient(circle at center,transparent 40%,rgba(0,0,0,0.5) 100%); pointer-events:none; }
+        .icon-container svg { width:90%; height:90%; position:relative; z-index:1; }
+        .card-content h2 { font-size:2.2rem; font-weight:800; line-height:1.05; margin-bottom:0.4rem; color:#fff; letter-spacing:-0.02em; }
+        .card-content p { font-family:'Inter',sans-serif; font-size:0.65rem; font-weight:700; letter-spacing:0.15em; text-transform:uppercase; color:var(--text-muted); margin-top:0.4rem; }
 
-        .card {
-            position: relative;
-            width: 400px;
-            height: 500px;
-            background: var(--glass-bg);
-            backdrop-filter: blur(20px);
-            border: 1px solid var(--glass-border);
-            border-radius: 2rem;
-            padding: 2rem;
-            display: flex;
-            flex-direction: column;
-            justify-content: flex-end;
-            cursor: pointer;
-            text-decoration: none;
-            color: inherit;
-            overflow: hidden;
-            transition: all 0.45s cubic-bezier(0.23, 1, 0.32, 1);
-        }
+        /* ═══ SALES ANIMATION ═══ */
+        .sales-bar { fill:var(--sales-accent); opacity:0.15; animation:barGrow 2s ease-out forwards; }
+        .sales-bar:nth-child(1){animation-delay:0.1s;} .sales-bar:nth-child(2){animation-delay:0.2s;} .sales-bar:nth-child(3){animation-delay:0.3s;} .sales-bar:nth-child(4){animation-delay:0.4s;} .sales-bar:nth-child(5){animation-delay:0.5s;} .sales-bar:nth-child(6){animation-delay:0.6s;} .sales-bar:nth-child(7){animation-delay:0.7s;}
+        @keyframes barGrow { 0%{transform:scaleY(0);opacity:0;} 60%{opacity:0.2;} 100%{transform:scaleY(1);opacity:0.18;} }
+        .trend-line { stroke:var(--sales-accent); stroke-width:2.5; fill:none; stroke-linecap:round; stroke-linejoin:round; stroke-dasharray:400; stroke-dashoffset:400; animation:drawLine 2.5s ease-out 0.3s forwards; filter:drop-shadow(0 0 6px var(--sales-accent)); }
+        @keyframes drawLine { to{stroke-dashoffset:0;} }
+        .trend-area { fill:url(#salesGradient); opacity:0; animation:fadeArea 1s ease-out 2s forwards; }
+        @keyframes fadeArea { to{opacity:0.15;} }
+        .sales-dot { fill:var(--sales-accent); filter:drop-shadow(0 0 4px var(--sales-accent)); opacity:0; animation:dotPop 0.4s ease-out forwards; }
+        .sales-dot:nth-child(1){animation-delay:0.8s;} .sales-dot:nth-child(2){animation-delay:1s;} .sales-dot:nth-child(3){animation-delay:1.2s;} .sales-dot:nth-child(4){animation-delay:1.4s;} .sales-dot:nth-child(5){animation-delay:1.6s;} .sales-dot:nth-child(6){animation-delay:1.8s;} .sales-dot:nth-child(7){animation-delay:2s;}
+        @keyframes dotPop { 0%{opacity:0;r:0;} 60%{r:5;} 100%{opacity:1;r:3.5;} }
+        .sales-dot-pulse { fill:none; stroke:var(--sales-accent); opacity:0; animation:dotGlow 2.5s ease-in-out infinite; }
+        .sales-dot-pulse:nth-child(1){animation-delay:2.2s;} .sales-dot-pulse:nth-child(2){animation-delay:2.4s;} .sales-dot-pulse:nth-child(3){animation-delay:2.6s;}
+        @keyframes dotGlow { 0%,100%{opacity:0;r:3;stroke-width:1;} 50%{opacity:0.6;r:8;stroke-width:0.5;} }
+        .currency-float { font-family:'Inter',sans-serif; font-size:8px; font-weight:700; fill:var(--sales-accent); opacity:0; animation:floatUp 4s ease-in-out infinite; }
+        .currency-float:nth-child(1){animation-delay:0s;} .currency-float:nth-child(2){animation-delay:1.3s;} .currency-float:nth-child(3){animation-delay:2.6s;} .currency-float:nth-child(4){animation-delay:3.9s;}
+        @keyframes floatUp { 0%{opacity:0;transform:translateY(10px);} 15%{opacity:0.3;} 50%{opacity:0.15;} 85%{opacity:0;} 100%{opacity:0;transform:translateY(-30px);} }
 
-        .card::before {
-            content: '';
-            position: absolute; inset: 0;
-            border-radius: 2rem; padding: 1px;
-            background: linear-gradient(160deg, rgba(255,255,255,0.12), transparent 50%);
-            -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
-            mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
-            -webkit-mask-composite: xor; mask-composite: exclude;
-            pointer-events: none;
-        }
-
-        .card:hover { transform: translateY(-8px) scale(1.02); }
-        .card.sales:hover {
-            box-shadow: 0 0 80px -15px rgba(0,209,255,0.35), 0 25px 50px -12px rgba(0,0,0,0.5);
-            border-color: rgba(0,209,255,0.3);
-        }
-        .card.fraud:hover {
-            box-shadow: 0 0 80px -15px rgba(255,157,0,0.35), 0 25px 50px -12px rgba(0,0,0,0.5);
-            border-color: rgba(255,157,0,0.3);
-        }
-
-        /* ─── Icon Container ─── */
-        .icon-container {
-            position: absolute;
-            top: 1.8rem; left: 1.8rem; right: 1.8rem;
-            height: 240px;
-            background: rgba(0,0,0,0.35);
-            border: 1px solid rgba(255,255,255,0.04);
-            border-radius: 1.2rem;
-            display: flex; align-items: center; justify-content: center;
-            overflow: hidden;
-        }
-        .icon-container::after {
-            content: '';
-            position: absolute; inset: 0;
-            background: radial-gradient(circle at center, transparent 40%, rgba(0,0,0,0.5) 100%);
-            pointer-events: none;
-        }
-        .icon-container svg { width: 90%; height: 90%; position: relative; z-index: 1; }
-
-        /* ─── Card Content ─── */
-        .card-content h2 {
-            font-size: 2.2rem; font-weight: 800; line-height: 1.05;
-            margin-bottom: 0.4rem; color: #fff; letter-spacing: -0.02em;
-        }
-        .card-content p {
-            font-family: 'Inter', sans-serif; font-size: 0.65rem; font-weight: 700;
-            letter-spacing: 0.15em; text-transform: uppercase; color: var(--text-muted); margin-top: 0.4rem;
-        }
-
-        /* ═══════════════ SALES ANIMATION ═══════════════ */
-
-        /* Animated rising bars */
-        .sales-bar {
-            fill: var(--sales-accent);
-            opacity: 0.15;
-            animation: barGrow 2s ease-out forwards;
-        }
-        .sales-bar:nth-child(1) { animation-delay: 0.1s; }
-        .sales-bar:nth-child(2) { animation-delay: 0.2s; }
-        .sales-bar:nth-child(3) { animation-delay: 0.3s; }
-        .sales-bar:nth-child(4) { animation-delay: 0.4s; }
-        .sales-bar:nth-child(5) { animation-delay: 0.5s; }
-        .sales-bar:nth-child(6) { animation-delay: 0.6s; }
-        .sales-bar:nth-child(7) { animation-delay: 0.7s; }
-
-        @keyframes barGrow {
-            0% { transform: scaleY(0); opacity: 0; }
-            60% { opacity: 0.2; }
-            100% { transform: scaleY(1); opacity: 0.18; }
-        }
-
-        /* Animated trend line - draws itself */
-        .trend-line {
-            stroke: var(--sales-accent);
-            stroke-width: 2.5;
-            fill: none;
-            stroke-linecap: round;
-            stroke-linejoin: round;
-            stroke-dasharray: 400;
-            stroke-dashoffset: 400;
-            animation: drawLine 2.5s ease-out 0.3s forwards;
-            filter: drop-shadow(0 0 6px var(--sales-accent));
-        }
-
-        @keyframes drawLine {
-            to { stroke-dashoffset: 0; }
-        }
-
-        /* Trend area fill */
-        .trend-area {
-            fill: url(#salesGradient);
-            opacity: 0;
-            animation: fadeArea 1s ease-out 2s forwards;
-        }
-        @keyframes fadeArea {
-            to { opacity: 0.15; }
-        }
-
-        /* Animated data dots */
-        .sales-dot {
-            fill: var(--sales-accent);
-            filter: drop-shadow(0 0 4px var(--sales-accent));
-            opacity: 0;
-            animation: dotPop 0.4s ease-out forwards;
-        }
-        .sales-dot:nth-child(1) { animation-delay: 0.8s; }
-        .sales-dot:nth-child(2) { animation-delay: 1s; }
-        .sales-dot:nth-child(3) { animation-delay: 1.2s; }
-        .sales-dot:nth-child(4) { animation-delay: 1.4s; }
-        .sales-dot:nth-child(5) { animation-delay: 1.6s; }
-        .sales-dot:nth-child(6) { animation-delay: 1.8s; }
-        .sales-dot:nth-child(7) { animation-delay: 2s; }
-
-        @keyframes dotPop {
-            0% { opacity: 0; r: 0; }
-            60% { r: 5; }
-            100% { opacity: 1; r: 3.5; }
-        }
-
-        /* Pulsing glow on dots after they appear */
-        .sales-dot-pulse {
-            fill: none;
-            stroke: var(--sales-accent);
-            opacity: 0;
-            animation: dotGlow 2.5s ease-in-out infinite;
-        }
-        .sales-dot-pulse:nth-child(1) { animation-delay: 2.2s; }
-        .sales-dot-pulse:nth-child(2) { animation-delay: 2.4s; }
-        .sales-dot-pulse:nth-child(3) { animation-delay: 2.6s; }
-
-        @keyframes dotGlow {
-            0%, 100% { opacity: 0; r: 3; stroke-width: 1; }
-            50% { opacity: 0.6; r: 8; stroke-width: 0.5; }
-        }
-
-        /* Moving currency symbols */
-        .currency-float {
-            font-family: 'Inter', sans-serif;
-            font-size: 8px;
-            font-weight: 700;
-            fill: var(--sales-accent);
-            opacity: 0;
-            animation: floatUp 4s ease-in-out infinite;
-        }
-        .currency-float:nth-child(1) { animation-delay: 0s; }
-        .currency-float:nth-child(2) { animation-delay: 1.3s; }
-        .currency-float:nth-child(3) { animation-delay: 2.6s; }
-        .currency-float:nth-child(4) { animation-delay: 3.9s; }
-
-        @keyframes floatUp {
-            0% { opacity: 0; transform: translateY(10px); }
-            15% { opacity: 0.3; }
-            50% { opacity: 0.15; }
-            85% { opacity: 0; }
-            100% { opacity: 0; transform: translateY(-30px); }
-        }
-
-        /* ═══════════════ FRAUD ANIMATION ═══════════════ */
-
-        .svg-fraud line.grid-line {
-            stroke: var(--fraud-accent);
-            stroke-width: 0.4;
-            opacity: 0.1;
-        }
-
-        .scanline {
-            stroke: var(--fraud-accent);
-            stroke-width: 2;
-            filter: drop-shadow(0 0 10px var(--fraud-accent));
-            animation: scan 3.5s infinite linear;
-            opacity: 0;
-        }
-        @keyframes scan {
-            0% { transform: translateY(-20px); opacity: 0; }
-            5% { opacity: 0.9; }
-            90% { opacity: 0.9; }
-            100% { transform: translateY(140px); opacity: 0; }
-        }
-
-        /* Warning triangle */
-        .fraud-warning {
-            fill: none;
-            stroke: var(--fraud-accent);
-            stroke-width: 1.5;
-            opacity: 0;
-            animation: warningPulse 3s ease-in-out infinite;
-            filter: drop-shadow(0 0 6px var(--fraud-accent));
-        }
-        @keyframes warningPulse {
-            0%, 100% { opacity: 0.1; transform: scale(0.95); }
-            50% { opacity: 0.5; transform: scale(1.05); }
-        }
-
-        .fraud-node {
-            fill: var(--fraud-accent);
-            filter: drop-shadow(0 0 5px var(--fraud-accent));
-            animation: fraudPulse 2s infinite alternate;
-        }
-        .fraud-node:nth-child(1) { animation-delay: 0s; }
-        .fraud-node:nth-child(2) { animation-delay: 0.5s; }
-        .fraud-node:nth-child(3) { animation-delay: 1s; }
-        .fraud-node:nth-child(4) { animation-delay: 1.5s; }
-        .fraud-node:nth-child(5) { animation-delay: 2s; }
-
-        @keyframes fraudPulse {
-            0% { opacity: 0.15; r: 1.5; }
-            100% { opacity: 1; r: 3.5; }
-        }
-
-        /* Radar sweep */
-        .radar-sweep {
-            fill: url(#radarGradient);
-            transform-origin: 80px 60px;
-            animation: radarSpin 4s linear infinite;
-        }
-        @keyframes radarSpin {
-            from { transform: rotate(0deg); }
-            to { transform: rotate(360deg); }
-        }
-
-        .radar-ring {
-            fill: none;
-            stroke: var(--fraud-accent);
-            opacity: 0.08;
-        }
+        /* ═══ FRAUD ANIMATION ═══ */
+        .svg-fraud line.grid-line { stroke:var(--fraud-accent); stroke-width:0.4; opacity:0.1; }
+        .scanline { stroke:var(--fraud-accent); stroke-width:2; filter:drop-shadow(0 0 10px var(--fraud-accent)); animation:scan 3.5s infinite linear; opacity:0; }
+        @keyframes scan { 0%{transform:translateY(-20px);opacity:0;} 5%{opacity:0.9;} 90%{opacity:0.9;} 100%{transform:translateY(140px);opacity:0;} }
+        .fraud-warning { fill:none; stroke:var(--fraud-accent); stroke-width:1.5; opacity:0; animation:warningPulse 3s ease-in-out infinite; filter:drop-shadow(0 0 6px var(--fraud-accent)); }
+        @keyframes warningPulse { 0%,100%{opacity:0.1;transform:scale(0.95);} 50%{opacity:0.5;transform:scale(1.05);} }
+        .fraud-node { fill:var(--fraud-accent); filter:drop-shadow(0 0 5px var(--fraud-accent)); animation:fraudPulse 2s infinite alternate; }
+        .fraud-node:nth-child(1){animation-delay:0s;} .fraud-node:nth-child(2){animation-delay:0.5s;} .fraud-node:nth-child(3){animation-delay:1s;} .fraud-node:nth-child(4){animation-delay:1.5s;} .fraud-node:nth-child(5){animation-delay:2s;}
+        @keyframes fraudPulse { 0%{opacity:0.15;r:1.5;} 100%{opacity:1;r:3.5;} }
+        .radar-sweep { fill:url(#radarGradient); transform-origin:80px 60px; animation:radarSpin 4s linear infinite; }
+        @keyframes radarSpin { from{transform:rotate(0deg);} to{transform:rotate(360deg);} }
+        .radar-ring { fill:none; stroke:var(--fraud-accent); opacity:0.08; }
 
         /* ─── Footer ─── */
-        footer {
-            width: 100%;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 0.8rem;
-            padding-bottom: 0.5rem;
-        }
-        .progress-container {
-            width: 220px; height: 3px;
-            background: rgba(255,255,255,0.06);
-            border-radius: 2px; position: relative;
-        }
-        .progress-bar {
-            position: absolute; left: 0; top: 0;
-            height: 100%; width: 50%;
-            background: #ff007a; border-radius: 2px;
-            box-shadow: 0 0 8px #ff007a;
-            transition: width 0.5s cubic-bezier(0.65,0,0.35,1);
-        }
-        .nav-dots { display: flex; gap: 0.6rem; }
-        .dot {
-            width: 30px; height: 30px; border-radius: 50%;
-            background: rgba(30,30,30,0.5); border: 1px solid var(--glass-border);
-            color: var(--text-muted); display: flex; align-items: center; justify-content: center;
-            font-size: 0.7rem; font-weight: 700; cursor: pointer; transition: all 0.3s ease;
-        }
-        .dot.active {
-            background: #ff007a; color: #fff; border-color: #ff007a;
-            box-shadow: 0 0 15px rgba(255,0,122,0.4);
-        }
+        #view-landing footer { width:100%; display:flex; flex-direction:column; align-items:center; gap:0.8rem; padding-bottom:0.5rem; }
+        .progress-container { width:220px; height:3px; background:rgba(255,255,255,0.06); border-radius:2px; position:relative; }
+        .progress-bar { position:absolute; left:0; top:0; height:100%; width:50%; background:#ff007a; border-radius:2px; box-shadow:0 0 8px #ff007a; transition:width 0.5s cubic-bezier(0.65,0,0.35,1); }
+        .nav-dots { display:flex; gap:0.6rem; }
+        .dot { width:30px; height:30px; border-radius:50%; background:rgba(30,30,30,0.5); border:1px solid var(--glass-border); color:var(--text-muted); display:flex; align-items:center; justify-content:center; font-size:0.7rem; font-weight:700; cursor:pointer; transition:all 0.3s ease; }
+        .dot.active { background:#ff007a; color:#fff; border-color:#ff007a; box-shadow:0 0 15px rgba(255,0,122,0.4); }
 
-        /* ─── Light Mode ─── */
-        html.light {
-            --bg-black: #f0f2f5; --text-main: #1a1a1a;
-            --glass-bg: rgba(255,255,255,0.7); --glass-border: rgba(0,0,0,0.08); --text-muted: #666;
-        }
-        html.light .logo { color: #1a1a1a; }
-        html.light .card-content h2 { color: #1a1a1a; }
-        html.light .icon-container { background: rgba(0,0,0,0.04); }
+        /* ─── Light Mode (Landing) ─── */
+        html.light { --bg-black:#f0f2f5; --text-main:#1a1a1a; --glass-bg:rgba(255,255,255,0.7); --glass-border:rgba(0,0,0,0.08); --text-muted:#666; }
+        html.light .logo { color:#1a1a1a; }
+        html.light .card-content h2 { color:#1a1a1a; }
+        html.light .icon-container { background:rgba(0,0,0,0.04); }
+
+        /* ═══ FRAUD DASHBOARD STYLES ═══ */
+        #view-fraud { font-family:'Inter',sans-serif; -webkit-font-smoothing:antialiased; }
+        .risk-high { border-left:4px solid #ef4444; }
+        .risk-medium { border-left:4px solid #f59e0b; }
+        html.light .fraud-bg-card { background-color:#ffffff; }
+        html.light .risk-high { background-color:#fef2f2; }
+        html.light .risk-medium { background-color:#fffbeb; }
+        html.dark .fraud-bg-card { background-color:#1e293b; border:1px solid #334155; }
+        html.dark .risk-high { background-color:#450a0a; }
+        html.dark .risk-medium { background-color:#451a03; }
+        .tab-active { border-bottom:2px solid #2563eb; color:#2563eb; font-weight:600; }
+        .custom-shadow { box-shadow:0 4px 6px -1px rgba(0,0,0,0.1); }
+        .sort-header { cursor:pointer; user-select:none; }
+        .fraud-modal-overlay { background:rgba(0,0,0,0.6); backdrop-filter:blur(4px); }
+        .back-to-portal { position:fixed; bottom:2rem; left:2rem; z-index:100; background:#1e293b; color:#fff; padding:0.75rem 1.25rem; border-radius:1rem; text-decoration:none; font-size:0.875rem; font-weight:700; display:flex; align-items:center; gap:0.5rem; border:1px solid #334155; box-shadow:0 10px 15px -3px rgba(0,0,0,0.4); transition:all 0.2s; cursor:pointer; }
+        .back-to-portal:hover { background:#334155; transform:translateY(-2px); box-shadow:0 20px 25px -5px rgba(0,0,0,0.5); }
+        .back-to-portal svg { width:1rem; height:1rem; }
 
         /* ─── Responsive ─── */
-        @media (max-width: 860px) {
-            body { overflow-y: auto; padding: 1rem; }
-            main { flex-direction: column; gap: 1.5rem; }
-            .card { width: 340px; height: 460px; }
-            .card-content h2 { font-size: 1.7rem; }
+        @media (max-width:860px) {
+            body:not(.spa-fraud-active) { overflow-y:auto; padding:1rem; }
+            #view-landing main { flex-direction:column; gap:1.5rem; }
+            .card { width:340px; height:460px; }
+            .card-content h2 { font-size:1.7rem; }
         }
     </style>
 </head>
@@ -589,174 +272,612 @@
         </div>
     </div>
 
-    <header>
-        <div class="logo">YOCO</div>
-        <div class="header-controls">
-            <input type="file" id="globalFile" accept=".csv, .xlsx, .xls" class="hidden">
-            <button id="importBtn" onclick="handleImportClick()" class="import-btn">
-                <svg id="importIcon" width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/></svg>
-                <span id="importLabel">Import Report</span>
-            </button>
-            <button onclick="openClearModal()" class="clear-btn" title="Clear All Data">
-                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
-            </button>
-            <button onclick="toggleTheme()" class="theme-toggle" title="Toggle Theme">
-                <svg id="themeIcon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"/>
-                </svg>
-            </button>
+    <!-- ═══════════════════════════════════════════ -->
+    <!-- ═══ VIEW: LANDING PAGE ═══                  -->
+    <!-- ═══════════════════════════════════════════ -->
+    <div id="view-landing">
+        <header>
+            <div class="logo">YOCO</div>
+            <div class="header-controls">
+                <input type="file" id="globalFile" accept=".csv, .xlsx, .xls" class="hidden">
+                <button id="importBtn" onclick="handleImportClick()" class="import-btn">
+                    <svg id="importIcon" width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/></svg>
+                    <span id="importLabel">Import Report</span>
+                </button>
+                <button onclick="openClearModal()" class="clear-btn" title="Clear All Data">
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                </button>
+                <button onclick="toggleTheme()" class="theme-toggle" title="Toggle Theme">
+                    <svg id="themeIcon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"/>
+                    </svg>
+                </button>
+            </div>
+        </header>
+
+        <main>
+            <!-- ═══ Sales Analytics Card ═══ -->
+            <a href="#sales" onclick="showView('sales'); return false;" class="card sales">
+                <div class="icon-container">
+                    <svg viewBox="0 0 160 120">
+                        <defs>
+                            <linearGradient id="salesGradient" x1="0" y1="0" x2="0" y2="1">
+                                <stop offset="0%" stop-color="var(--sales-accent)" stop-opacity="0.3"/>
+                                <stop offset="100%" stop-color="var(--sales-accent)" stop-opacity="0"/>
+                            </linearGradient>
+                        </defs>
+                        <g>
+                            <rect class="sales-bar" x="12" y="82" width="13" height="28" rx="2" style="transform-origin: 12px 110px;"/>
+                            <rect class="sales-bar" x="32" y="62" width="13" height="48" rx="2" style="transform-origin: 32px 110px;"/>
+                            <rect class="sales-bar" x="52" y="44" width="13" height="66" rx="2" style="transform-origin: 52px 110px;"/>
+                            <rect class="sales-bar" x="72" y="54" width="13" height="56" rx="2" style="transform-origin: 72px 110px;"/>
+                            <rect class="sales-bar" x="92" y="34" width="13" height="76" rx="2" style="transform-origin: 92px 110px;"/>
+                            <rect class="sales-bar" x="112" y="22" width="13" height="88" rx="2" style="transform-origin: 112px 110px;"/>
+                            <rect class="sales-bar" x="132" y="38" width="13" height="72" rx="2" style="transform-origin: 132px 110px;"/>
+                        </g>
+                        <path class="trend-area" d="M18,80 L38,60 L58,42 L78,52 L98,32 L118,20 L138,36 L138,110 L18,110 Z"/>
+                        <polyline class="trend-line" points="18,80 38,60 58,42 78,52 98,32 118,20 138,36"/>
+                        <g>
+                            <circle class="sales-dot" cx="18" cy="80" r="0"/>
+                            <circle class="sales-dot" cx="38" cy="60" r="0"/>
+                            <circle class="sales-dot" cx="58" cy="42" r="0"/>
+                            <circle class="sales-dot" cx="78" cy="52" r="0"/>
+                            <circle class="sales-dot" cx="98" cy="32" r="0"/>
+                            <circle class="sales-dot" cx="118" cy="20" r="0"/>
+                            <circle class="sales-dot" cx="138" cy="36" r="0"/>
+                        </g>
+                        <g>
+                            <circle class="sales-dot-pulse" cx="58" cy="42" r="3"/>
+                            <circle class="sales-dot-pulse" cx="118" cy="20" r="3"/>
+                            <circle class="sales-dot-pulse" cx="98" cy="32" r="3"/>
+                        </g>
+                        <g>
+                            <text class="currency-float" x="25" y="50">R</text>
+                            <text class="currency-float" x="75" y="30">R</text>
+                            <text class="currency-float" x="110" y="45">R</text>
+                            <text class="currency-float" x="55" y="65">R</text>
+                        </g>
+                    </svg>
+                </div>
+                <div class="card-content">
+                    <h2>Sales Analytics</h2>
+                    <p>Revenue &amp; Performance</p>
+                </div>
+            </a>
+
+            <!-- ═══ Fraud Detection Analytics Card ═══ -->
+            <a href="#fraud" onclick="showView('fraud'); return false;" class="card fraud">
+                <div class="icon-container">
+                    <svg viewBox="0 0 160 120">
+                        <defs>
+                            <radialGradient id="radarGradient" cx="50%" cy="50%" r="50%">
+                                <stop offset="0%" stop-color="var(--fraud-accent)" stop-opacity="0.15"/>
+                                <stop offset="100%" stop-color="var(--fraud-accent)" stop-opacity="0"/>
+                            </radialGradient>
+                        </defs>
+                        <g>
+                            <line class="grid-line" x1="0" y1="20" x2="160" y2="20"/>
+                            <line class="grid-line" x1="0" y1="40" x2="160" y2="40"/>
+                            <line class="grid-line" x1="0" y1="60" x2="160" y2="60"/>
+                            <line class="grid-line" x1="0" y1="80" x2="160" y2="80"/>
+                            <line class="grid-line" x1="0" y1="100" x2="160" y2="100"/>
+                            <line class="grid-line" x1="20" y1="0" x2="20" y2="120"/>
+                            <line class="grid-line" x1="40" y1="0" x2="40" y2="120"/>
+                            <line class="grid-line" x1="60" y1="0" x2="60" y2="120"/>
+                            <line class="grid-line" x1="80" y1="0" x2="80" y2="120"/>
+                            <line class="grid-line" x1="100" y1="0" x2="100" y2="120"/>
+                            <line class="grid-line" x1="120" y1="0" x2="120" y2="120"/>
+                            <line class="grid-line" x1="140" y1="0" x2="140" y2="120"/>
+                        </g>
+                        <circle class="radar-ring" cx="80" cy="60" r="15" stroke-width="0.5"/>
+                        <circle class="radar-ring" cx="80" cy="60" r="30" stroke-width="0.5"/>
+                        <circle class="radar-ring" cx="80" cy="60" r="45" stroke-width="0.5"/>
+                        <path class="radar-sweep" d="M80,60 L80,15 A45,45 0 0,1 112,33 Z"/>
+                        <line class="scanline" x1="0" y1="0" x2="160" y2="0"/>
+                        <path class="fraud-warning" d="M80,25 L95,50 L65,50 Z"/>
+                        <text x="77" y="47" fill="var(--fraud-accent)" font-size="12" font-weight="900" style="animation: warningPulse 3s ease-in-out infinite; opacity:0;">!</text>
+                        <g>
+                            <circle class="fraud-node" cx="40" cy="60" r="2"/>
+                            <circle class="fraud-node" cx="120" cy="40" r="2"/>
+                            <circle class="fraud-node" cx="100" cy="85" r="2"/>
+                            <circle class="fraud-node" cx="55" cy="95" r="2"/>
+                            <circle class="fraud-node" cx="130" cy="70" r="2"/>
+                        </g>
+                    </svg>
+                </div>
+                <div class="card-content">
+                    <h2>Fraud Detection Analytics</h2>
+                    <p>Risk &amp; Anomalies</p>
+                </div>
+            </a>
+        </main>
+
+        <footer>
+            <div class="progress-container">
+                <div id="progressBar" class="progress-bar"></div>
+            </div>
+            <div class="nav-dots">
+                <div class="dot active" onclick="scrollToCard(0)">1</div>
+                <div class="dot" onclick="scrollToCard(1)">2</div>
+            </div>
+        </footer>
+    </div>
+
+    <!-- ═══════════════════════════════════════════ -->
+    <!-- ═══ VIEW: FRAUD DASHBOARD ═══               -->
+    <!-- ═══════════════════════════════════════════ -->
+    <div id="view-fraud" class="hidden">
+        <div class="max-w-7xl mx-auto p-4 md:p-8">
+            <!-- Header -->
+            <header class="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
+                <div>
+                    <h1 class="text-3xl font-bold tracking-tight">Fraud Detection Dashboard</h1>
+                    <div class="flex flex-col">
+                        <p class="text-slate-500">Analyze <span class="font-mono bg-slate-100 dark:bg-slate-800 px-1 rounded text-sm italic">.csv</span> or <span class="font-mono bg-slate-100 dark:bg-slate-800 px-1 rounded text-sm italic">.xlsx</span> reports.</p>
+                        <p id="dashboardDateRange" class="hidden text-sm font-bold text-blue-600 mt-1 uppercase tracking-tight"></p>
+                    </div>
+                </div>
+                <div class="flex items-center gap-3">
+                    <!-- Theme Toggle -->
+                    <button onclick="toggleTheme()" class="p-2.5 rounded-lg border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 transition-all" title="Toggle Theme">
+                        <svg id="fraudThemeIconSun" class="h-5 w-5 hidden dark:block text-amber-400" fill="currentColor" viewBox="0 0 20 20"><path d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.12-10.607a1 1 0 010 1.414l-.706.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0zM17 11a1 1 0 100-2h-1a1 1 0 100 2h1zm-7 4a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zM5.05 6.464A1 1 0 106.465 5.05l-.708-.707a1 1 0 00-1.414 1.414l.707.707zm1.414 8.486l-.707.707a1 1 0 01-1.414-1.414l.707-.707a1 1 0 011.414 1.414zM4 11a1 1 0 100-2H3a1 1 0 000 2h1z"/></svg>
+                        <svg id="fraudThemeIconMoon" class="h-5 w-5 block dark:hidden text-slate-600" fill="currentColor" viewBox="0 0 20 20"><path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z"/></svg>
+                    </button>
+                    <!-- PDF Button -->
+                    <button id="pdfBtn" onclick="generatePDFReport()" class="hidden bg-slate-800 hover:bg-slate-900 text-white px-4 py-2.5 rounded-lg font-medium transition-all flex items-center gap-2 custom-shadow">
+                        <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
+                        <span>Download PDF summary</span>
+                    </button>
+                </div>
+            </header>
+
+            <!-- Stats Overview -->
+            <div id="statsGrid" class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8 hidden">
+                <div class="bg-white dark:bg-slate-800 dark:border dark:border-slate-700 p-6 rounded-xl custom-shadow">
+                    <p class="text-xs font-bold text-slate-500 uppercase tracking-widest mb-1">Total Voids</p>
+                    <h3 id="statTotalVoids" class="text-2xl font-bold text-red-500">R0.00</h3>
+                </div>
+                <div class="bg-white dark:bg-slate-800 dark:border dark:border-slate-700 p-6 rounded-xl custom-shadow">
+                    <p class="text-xs font-bold text-slate-500 uppercase tracking-widest mb-1">Avg Tip Ratio</p>
+                    <h3 id="statAvgTip" class="text-2xl font-bold text-blue-500">0%</h3>
+                </div>
+                <div class="bg-white dark:bg-slate-800 dark:border dark:border-slate-700 p-6 rounded-xl custom-shadow">
+                    <p class="text-xs font-bold text-slate-500 uppercase tracking-widest mb-1">High Risk Count</p>
+                    <h3 id="statHighRisk" class="text-2xl font-bold text-orange-500">0</h3>
+                </div>
+                <div class="bg-white dark:bg-slate-800 dark:border dark:border-slate-700 p-6 rounded-xl custom-shadow">
+                    <p class="text-xs font-bold text-slate-500 uppercase tracking-widest mb-1">Total Sales</p>
+                    <h3 id="statTotalSales" class="text-2xl font-bold">R0.00</h3>
+                </div>
+            </div>
+
+            <!-- Main Content Area -->
+            <div id="mainContent" class="hidden">
+                <div class="flex border-b border-slate-200 dark:border-slate-700 mb-6 overflow-x-auto gap-8 no-scrollbar">
+                    <button onclick="switchTab('summary')" id="tab-summary" class="pb-3 px-1 tab-active whitespace-nowrap">Employee Risk Summary</button>
+                    <button onclick="switchTab('tips')" id="tab-tips" class="pb-3 px-1 text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 whitespace-nowrap">Suspicious Tips</button>
+                    <button onclick="switchTab('voids')" id="tab-voids" class="pb-3 px-1 text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 whitespace-nowrap">Voids Audit</button>
+                    <button onclick="switchTab('parking')" id="tab-parking" class="pb-3 px-1 text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 whitespace-nowrap">Bill Parking</button>
+                </div>
+
+                <div id="section-summary" class="tab-section">
+                    <div class="bg-white dark:bg-slate-800 dark:border-slate-700 p-4 rounded-xl border border-slate-200 mb-6 flex flex-wrap gap-6 items-center custom-shadow">
+                        <span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mr-2">Risk Index:</span>
+                        <div class="flex items-center gap-2"><div class="w-3 h-3 rounded-full bg-red-500"></div><span class="text-xs font-semibold">High Risk</span></div>
+                        <div class="flex items-center gap-2"><div class="w-3 h-3 rounded-full bg-amber-500"></div><span class="text-xs font-semibold">Medium Risk</span></div>
+                        <button onclick="showInfo('summary')" class="ml-auto text-slate-400 flex items-center gap-1 text-[10px] uppercase font-bold hover:text-blue-600 transition-colors">ⓘ Info</button>
+                    </div>
+                    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                        <div class="lg:col-span-2 space-y-8" id="employeeCards"></div>
+                        <div class="bg-white dark:bg-slate-800 dark:border dark:border-slate-700 p-6 rounded-xl custom-shadow h-fit sticky top-8 text-slate-900 dark:text-slate-100">
+                            <h4 class="font-bold mb-4 uppercase text-xs tracking-widest">Tip Distribution</h4>
+                            <canvas id="tipChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tips Tab -->
+                <div id="section-tips" class="tab-section hidden">
+                    <div class="flex items-center justify-between mb-4">
+                        <h3 class="font-bold text-slate-900 dark:text-slate-100">High Tip Ratios</h3>
+                        <div class="flex gap-2">
+                            <button onclick="exportSectionToExcel('tips')" class="text-xs bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1.5 rounded flex items-center gap-1 transition-colors">
+                                <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
+                                Export Excel (Detailed)
+                            </button>
+                            <button onclick="showInfo('tips')" class="info-btn text-slate-400">ⓘ</button>
+                        </div>
+                    </div>
+                    <div class="bg-white dark:bg-slate-800 dark:border dark:border-slate-700 rounded-xl custom-shadow overflow-x-auto border border-slate-200">
+                        <table class="w-full text-left text-sm min-w-[800px]"><thead class="bg-slate-50 dark:bg-slate-800 border-b dark:border-slate-700"><tr><th class="p-4 font-semibold">Invoice</th><th class="p-4 font-semibold sort-header" onclick="sortTable('tips', 'Employee Name')">Employee ↑↓</th><th class="p-4 font-semibold sort-header text-[10px] uppercase" onclick="sortTable('tips', 'Bill Created Time')">Opened ↑↓</th><th class="p-4 font-semibold sort-header text-[10px] uppercase" onclick="sortTable('tips', 'Bill Invoice Time')">Closed ↑↓</th><th class="p-4 font-semibold sort-header" onclick="sortTable('tips', 'Gross Sale Amount')">Sale ↑↓</th><th class="p-4 font-semibold sort-header text-red-500" onclick="sortTable('tips', 'Tip')">Tip ↑↓</th><th class="p-4 font-semibold sort-header" onclick="sortTable('tips', 'Tip Ratio')">Ratio ↑↓</th><th class="p-4 font-semibold">View</th></tr></thead><tbody id="tipsTable"></tbody></table>
+                    </div>
+                </div>
+
+                <!-- Voids Tab -->
+                <div id="section-voids" class="tab-section hidden">
+                    <div class="flex items-center justify-between mb-4">
+                        <h3 class="font-bold text-slate-900 dark:text-slate-100">Void Audit</h3>
+                        <div class="flex gap-2">
+                            <button onclick="exportSectionToExcel('voids')" class="text-xs bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1.5 rounded flex items-center gap-1 transition-colors">
+                                <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
+                                Export Excel (Detailed)
+                            </button>
+                            <button onclick="showInfo('voids')" class="info-btn text-slate-400">ⓘ</button>
+                        </div>
+                    </div>
+                    <div class="bg-white dark:bg-slate-800 dark:border dark:border-slate-700 rounded-xl custom-shadow overflow-x-auto border border-slate-200">
+                        <table class="w-full text-left text-sm min-w-[800px]"><thead class="bg-slate-50 dark:bg-slate-800 border-b dark:border-slate-700"><tr><th class="p-4 font-semibold">Invoice</th><th class="p-4 font-semibold sort-header" onclick="sortTable('voids', 'Employee Name')">Employee ↑↓</th><th class="p-4 font-semibold sort-header text-[10px] uppercase" onclick="sortTable('voids', 'Bill Created Time')">Opened ↑↓</th><th class="p-4 font-semibold sort-header text-[10px] uppercase" onclick="sortTable('voids', 'Bill Invoice Time')">Closed ↑↓</th><th class="p-4 font-semibold sort-header" onclick="sortTable('voids', 'Gross Sale Amount')">Sale ↑↓</th><th class="p-4 font-semibold sort-header text-red-500" onclick="sortTable('voids', 'Voids Total')">Void ↑↓</th><th class="p-4 font-semibold">View</th></tr></thead><tbody id="voidsTable"></tbody></table>
+                    </div>
+                </div>
+
+                <!-- Parking Tab -->
+                <div id="section-parking" class="tab-section hidden">
+                    <div class="flex items-center justify-between mb-4">
+                        <h3 class="font-bold text-slate-900 dark:text-slate-100">Bill Parking</h3>
+                        <div class="flex gap-2">
+                            <button onclick="exportSectionToExcel('parking')" class="text-xs bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1.5 rounded flex items-center gap-1 transition-colors">
+                                <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
+                                Export Excel (Detailed)
+                            </button>
+                            <button onclick="showInfo('parking')" class="info-btn text-slate-400">ⓘ</button>
+                        </div>
+                    </div>
+                    <div class="bg-white dark:bg-slate-800 dark:border dark:border-slate-700 rounded-xl custom-shadow overflow-x-auto border border-slate-200">
+                        <table class="w-full text-left text-sm min-w-[800px]"><thead class="bg-slate-50 dark:bg-slate-800 border-b dark:border-slate-700"><tr><th class="p-4 font-semibold">Invoice</th><th class="p-4 font-semibold sort-header" onclick="sortTable('parking', 'Employee Name')">Employee ↑↓</th><th class="p-4 font-semibold sort-header text-[10px] uppercase" onclick="sortTable('parking', 'Bill Created Time')">Opened ↑↓</th><th class="p-4 font-semibold sort-header text-[10px] uppercase" onclick="sortTable('parking', 'Bill Invoice Time')">Closed ↑↓</th><th class="p-4 font-semibold sort-header" onclick="sortTable('parking', 'Bill Duration (minutes)')">Duration ↑↓</th><th class="p-4 font-semibold sort-header" onclick="sortTable('parking', 'Gross Sale Amount')">Sale ↑↓</th><th class="p-4 font-semibold">View</th></tr></thead><tbody id="parkingTable"></tbody></table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Initial Welcome State -->
+            <div id="welcomeState" class="bg-white dark:bg-slate-800 dark:border-slate-700 border-2 border-dashed border-slate-300 rounded-2xl p-20 text-center">
+                <div class="bg-blue-50 dark:bg-blue-900/30 w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-6 text-blue-600 dark:text-blue-400">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
+                </div>
+                <h2 class="text-2xl font-bold mb-2 text-slate-900 dark:text-slate-100">Fraud Analysis</h2>
+                <p class="text-slate-500 mb-8 max-w-md mx-auto">Upload your <strong>Munch Excel (.xlsx)</strong> or CSV reports to detect suspicious staff behavior.</p>
+            </div>
         </div>
-    </header>
 
-    <main>
-        <!-- ═══ Sales Analytics Card ═══ -->
-        <a href="file:///Users/leoroyne/Desktop/INDEX2_Sales.html" class="card sales">
-            <div class="icon-container">
-                <svg viewBox="0 0 160 120">
-                    <defs>
-                        <linearGradient id="salesGradient" x1="0" y1="0" x2="0" y2="1">
-                            <stop offset="0%" stop-color="var(--sales-accent)" stop-opacity="0.3"/>
-                            <stop offset="100%" stop-color="var(--sales-accent)" stop-opacity="0"/>
-                        </linearGradient>
-                    </defs>
-
-                    <!-- Bars (grow from bottom) -->
-                    <g>
-                        <rect class="sales-bar" x="12" y="82" width="13" height="28" rx="2" style="transform-origin: 12px 110px;"/>
-                        <rect class="sales-bar" x="32" y="62" width="13" height="48" rx="2" style="transform-origin: 32px 110px;"/>
-                        <rect class="sales-bar" x="52" y="44" width="13" height="66" rx="2" style="transform-origin: 52px 110px;"/>
-                        <rect class="sales-bar" x="72" y="54" width="13" height="56" rx="2" style="transform-origin: 72px 110px;"/>
-                        <rect class="sales-bar" x="92" y="34" width="13" height="76" rx="2" style="transform-origin: 92px 110px;"/>
-                        <rect class="sales-bar" x="112" y="22" width="13" height="88" rx="2" style="transform-origin: 112px 110px;"/>
-                        <rect class="sales-bar" x="132" y="38" width="13" height="72" rx="2" style="transform-origin: 132px 110px;"/>
-                    </g>
-
-                    <!-- Trend area fill -->
-                    <path class="trend-area" d="M18,80 L38,60 L58,42 L78,52 L98,32 L118,20 L138,36 L138,110 L18,110 Z"/>
-
-                    <!-- Self-drawing trend line -->
-                    <polyline class="trend-line" points="18,80 38,60 58,42 78,52 98,32 118,20 138,36"/>
-
-                    <!-- Data dots -->
-                    <g>
-                        <circle class="sales-dot" cx="18" cy="80" r="0"/>
-                        <circle class="sales-dot" cx="38" cy="60" r="0"/>
-                        <circle class="sales-dot" cx="58" cy="42" r="0"/>
-                        <circle class="sales-dot" cx="78" cy="52" r="0"/>
-                        <circle class="sales-dot" cx="98" cy="32" r="0"/>
-                        <circle class="sales-dot" cx="118" cy="20" r="0"/>
-                        <circle class="sales-dot" cx="138" cy="36" r="0"/>
-                    </g>
-
-                    <!-- Pulsing rings on key data points -->
-                    <g>
-                        <circle class="sales-dot-pulse" cx="58" cy="42" r="3"/>
-                        <circle class="sales-dot-pulse" cx="118" cy="20" r="3"/>
-                        <circle class="sales-dot-pulse" cx="98" cy="32" r="3"/>
-                    </g>
-
-                    <!-- Floating currency symbols -->
-                    <g>
-                        <text class="currency-float" x="25" y="50">R</text>
-                        <text class="currency-float" x="75" y="30">R</text>
-                        <text class="currency-float" x="110" y="45">R</text>
-                        <text class="currency-float" x="55" y="65">R</text>
-                    </g>
-                </svg>
+        <!-- Fraud Info Modal -->
+        <div id="infoModal" class="hidden fixed inset-0 fraud-modal-overlay flex items-center justify-center p-4 z-[60]">
+            <div class="bg-white dark:bg-slate-800 dark:border dark:border-slate-700 rounded-2xl max-w-lg w-full shadow-2xl overflow-hidden">
+                <div class="p-6 border-b dark:border-slate-700 flex justify-between items-center bg-blue-50/50 dark:bg-blue-900/20 text-slate-900 dark:text-slate-100">
+                    <h3 id="infoModalTitle" class="text-lg font-bold">Explanation</h3>
+                    <button onclick="closeInfo()" class="text-slate-400 hover:text-slate-600">✕</button>
+                </div>
+                <div id="infoModalContent" class="p-6 text-sm text-slate-600 dark:text-slate-400 leading-relaxed space-y-4"></div>
+                <div class="p-4 bg-slate-50 dark:bg-slate-800/50 border-t dark:border-slate-700 text-right">
+                    <button onclick="closeInfo()" class="bg-blue-600 text-white px-6 py-2 rounded-lg text-sm font-medium hover:bg-blue-700">Close</button>
+                </div>
             </div>
-            <div class="card-content">
-                <h2>Sales Analytics</h2>
-                <p>Revenue & Performance</p>
-            </div>
-        </a>
-
-        <!-- ═══ Fraud Detection Analytics Card ═══ -->
-        <a href="file:///Users/leoroyne/Desktop/INDEX1_Fraud.html" class="card fraud">
-            <div class="icon-container">
-                <svg viewBox="0 0 160 120">
-                    <defs>
-                        <radialGradient id="radarGradient" cx="50%" cy="50%" r="50%">
-                            <stop offset="0%" stop-color="var(--fraud-accent)" stop-opacity="0.15"/>
-                            <stop offset="100%" stop-color="var(--fraud-accent)" stop-opacity="0"/>
-                        </radialGradient>
-                    </defs>
-
-                    <!-- Grid lines -->
-                    <g>
-                        <line class="grid-line" x1="0" y1="20" x2="160" y2="20"/>
-                        <line class="grid-line" x1="0" y1="40" x2="160" y2="40"/>
-                        <line class="grid-line" x1="0" y1="60" x2="160" y2="60"/>
-                        <line class="grid-line" x1="0" y1="80" x2="160" y2="80"/>
-                        <line class="grid-line" x1="0" y1="100" x2="160" y2="100"/>
-                        <line class="grid-line" x1="20" y1="0" x2="20" y2="120"/>
-                        <line class="grid-line" x1="40" y1="0" x2="40" y2="120"/>
-                        <line class="grid-line" x1="60" y1="0" x2="60" y2="120"/>
-                        <line class="grid-line" x1="80" y1="0" x2="80" y2="120"/>
-                        <line class="grid-line" x1="100" y1="0" x2="100" y2="120"/>
-                        <line class="grid-line" x1="120" y1="0" x2="120" y2="120"/>
-                        <line class="grid-line" x1="140" y1="0" x2="140" y2="120"/>
-                    </g>
-
-                    <!-- Radar rings -->
-                    <circle class="radar-ring" cx="80" cy="60" r="15" stroke-width="0.5"/>
-                    <circle class="radar-ring" cx="80" cy="60" r="30" stroke-width="0.5"/>
-                    <circle class="radar-ring" cx="80" cy="60" r="45" stroke-width="0.5"/>
-
-                    <!-- Radar sweep -->
-                    <path class="radar-sweep" d="M80,60 L80,15 A45,45 0 0,1 112,33 Z"/>
-
-                    <!-- Scan line -->
-                    <line class="scanline" x1="0" y1="0" x2="160" y2="0"/>
-
-                    <!-- Warning triangle -->
-                    <path class="fraud-warning" d="M80,25 L95,50 L65,50 Z"/>
-                    <text x="77" y="47" fill="var(--fraud-accent)" font-size="12" font-weight="900"
-                          style="animation: warningPulse 3s ease-in-out infinite; opacity:0;">!</text>
-
-                    <!-- Alert dots -->
-                    <g>
-                        <circle class="fraud-node" cx="40" cy="60" r="2"/>
-                        <circle class="fraud-node" cx="120" cy="40" r="2"/>
-                        <circle class="fraud-node" cx="100" cy="85" r="2"/>
-                        <circle class="fraud-node" cx="55" cy="95" r="2"/>
-                        <circle class="fraud-node" cx="130" cy="70" r="2"/>
-                    </g>
-                </svg>
-            </div>
-            <div class="card-content">
-                <h2>Fraud Detection Analytics</h2>
-                <p>Risk & Anomalies</p>
-            </div>
-        </a>
-    </main>
-
-    <footer>
-        <div class="progress-container">
-            <div id="progressBar" class="progress-bar"></div>
         </div>
-        <div class="nav-dots">
-            <div class="dot active" onclick="scrollToCard(0)">1</div>
-            <div class="dot" onclick="scrollToCard(1)">2</div>
+
+        <!-- Invoice Modal -->
+        <div id="invoiceModal" class="hidden fixed inset-0 fraud-modal-overlay flex items-center justify-center p-4 z-50">
+            <div class="bg-white dark:bg-slate-800 dark:border dark:border-slate-700 rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-hidden flex flex-col shadow-2xl">
+                <div class="p-6 border-b dark:border-slate-700 flex justify-between items-center bg-slate-50 dark:bg-slate-800/50 text-slate-900 dark:text-slate-100">
+                    <div><h3 id="modalInvoiceId" class="text-xl font-bold underline decoration-blue-500 underline-offset-4">Details</h3><p id="modalEmployee" class="text-xs text-slate-500 mt-1 uppercase font-bold tracking-tight"></p></div>
+                    <button onclick="closeModal()" class="text-slate-400 hover:text-slate-600 text-xl">✕</button>
+                </div>
+                <div id="modalBody" class="p-6 overflow-y-auto space-y-6">
+                    <div id="modalSummary" class="grid grid-cols-3 gap-4 bg-slate-50 dark:bg-slate-800/30 p-4 rounded-xl border dark:border-slate-700 text-slate-900 dark:text-slate-100"></div>
+                    <div>
+                        <h4 class="font-bold mb-3 text-xs uppercase tracking-widest text-slate-400">Order Items</h4>
+                        <table class="w-full text-left text-xs"><thead class="border-b dark:border-slate-700 text-slate-400"><tr><th class="pb-2 font-semibold text-slate-900 dark:text-slate-100">Product</th><th class="pb-2 font-semibold text-center text-slate-900 dark:text-slate-100">Qty</th><th class="pb-2 font-semibold text-right text-slate-900 dark:text-slate-100">Total</th></tr></thead><tbody id="modalItemsTable" class="text-slate-900 dark:text-slate-100"></tbody></table>
+                    </div>
+                </div>
+            </div>
         </div>
-    </footer>
+
+        <!-- Back to Portal Button -->
+        <button onclick="showView('landing')" class="back-to-portal">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/></svg>
+            Back to Portal
+        </button>
+    </div>
+
+    <!-- ═══════════════════════════════════════════ -->
+    <!-- ═══ VIEW: SALES DASHBOARD ═══               -->
+    <!-- ═══════════════════════════════════════════ -->
+    <div id="view-sales" class="hidden">
+        <div id="sales-pdf-loading" class="flex items-center gap-3 bg-indigo-600 text-white px-6 py-3 rounded-2xl shadow-2xl text-xs font-bold border border-indigo-500">
+            <svg class="animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+            Generating End-of-Day PDF...
+        </div>
+        <div class="max-w-[1600px] mx-auto p-4 md:p-8">
+            <header class="mb-10 flex flex-col lg:flex-row lg:items-end justify-between gap-6">
+                <div>
+                    <h1 class="text-4xl font-black text-slate-900 dark:text-white tracking-tighter">Sales Analytics</h1>
+                    <p class="text-slate-500 dark:text-slate-400 mt-1 flex items-center gap-2 font-medium">
+                        <span class="w-2 h-2 rounded-full bg-indigo-500 shadow-[0_0_10px_rgba(99,102,241,0.5)]"></span>
+                        <span id="sales-report-period">Import a report to analyze performance</span>
+                    </p>
+                </div>
+                <div class="flex flex-wrap items-center gap-3">
+                    <button onclick="toggleTheme()" class="p-3 bg-white dark:bg-darkCard border border-slate-200 dark:border-darkBorder rounded-xl shadow-sm hover:border-indigo-200 transition-all">
+                        <svg class="w-5 h-5 text-amber-500 hidden dark:block" fill="currentColor" viewBox="0 0 20 20"><path d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.12-10.607a1 1 0 010 1.414l-.706.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0zM17 11a1 1 0 100-2h-1a1 1 0 100 2h1zm-7 4a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zM5.05 6.464A1 1 0 106.465 5.05l-.708-.707a1 1 0 00-1.414 1.414l.707.707zm1.414 8.486l-.707.707a1 1 0 01-1.414-1.414l.707-.707a1 1 0 011.414 1.414zM4 11a1 1 0 100-2H3a1 1 0 000 2h1z"></path></svg>
+                        <svg class="w-5 h-5 text-indigo-600 block dark:hidden" fill="currentColor" viewBox="0 0 20 20"><path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z"></path></svg>
+                    </button>
+                    <button id="sales-pdf-export-btn" onclick="salesExportToPDF()" class="flex items-center gap-2 p-3 bg-white dark:bg-darkCard border border-slate-200 dark:border-darkBorder rounded-xl shadow-sm hover:border-indigo-200 hover:text-indigo-600 transition-all font-bold text-xs uppercase tracking-widest disabled:opacity-30" title="Download Official Summary PDF" disabled>
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
+                        Summary PDF
+                    </button>
+                </div>
+            </header>
+
+            <!-- KPI Grid -->
+            <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-10">
+                <div class="p-5 bg-white dark:bg-darkCard border border-slate-100 dark:border-darkBorder shadow-sm rounded-xl">
+                    <div class="flex justify-between items-start mb-2"><p class="stat-label">Gross Sales</p><span class="info-btn" onclick="salesShowInfo('gross')">ⓘ</span></div>
+                    <p class="stat-value" id="sales-kpi-gross">R 0.00</p>
+                    <p class="text-[10px] font-bold text-slate-400 mt-1" id="sales-kpi-count">0 Transactions</p>
+                </div>
+                <div class="p-5 bg-white dark:bg-darkCard border border-slate-100 dark:border-darkBorder shadow-sm rounded-xl">
+                    <div class="flex justify-between items-start mb-2"><p class="stat-label">Total VAT</p><span class="info-btn" onclick="salesShowInfo('vat')">ⓘ</span></div>
+                    <p class="stat-value text-indigo-500" id="sales-kpi-vat">R 0.00</p>
+                    <p class="text-[10px] font-bold text-slate-400 mt-1 uppercase tracking-tighter">Tax Component</p>
+                </div>
+                <div class="p-5 bg-white dark:bg-darkCard border border-slate-100 dark:border-darkBorder shadow-sm rounded-xl">
+                    <div class="flex justify-between items-start mb-2"><p class="stat-label">Discounts</p><span class="info-btn" onclick="salesShowInfo('discounts')">ⓘ</span></div>
+                    <p class="stat-value text-orange-500" id="sales-kpi-discounts">R 0.00</p>
+                    <p class="text-[10px] font-bold text-slate-400 mt-1" id="sales-kpi-discounts-count">0 Applied</p>
+                </div>
+                <div class="p-5 bg-white dark:bg-darkCard border border-slate-100 dark:border-darkBorder shadow-sm rounded-xl">
+                    <div class="flex justify-between items-start mb-2"><p class="stat-label">Refunds</p><span class="info-btn" onclick="salesShowInfo('refunds')">ⓘ</span></div>
+                    <p class="stat-value text-rose-500" id="sales-kpi-refunds">R 0.00</p>
+                    <p class="text-[10px] font-bold text-slate-400 mt-1" id="sales-kpi-refund-count">No refunds</p>
+                </div>
+                <div class="p-5 bg-white dark:bg-darkCard border border-slate-100 dark:border-darkBorder shadow-sm rounded-xl">
+                    <div class="flex justify-between items-start mb-2"><p class="stat-label">Total Tips</p><span class="info-btn" onclick="salesShowInfo('tips')">ⓘ</span></div>
+                    <p class="stat-value text-emerald-500" id="sales-kpi-tips">R 0.00</p>
+                    <p class="text-[10px] font-bold text-slate-400 mt-1" id="sales-kpi-tips-count">0 Tips</p>
+                </div>
+                <div class="p-5 bg-white dark:bg-darkCard border border-slate-100 dark:border-darkBorder shadow-sm rounded-xl">
+                    <div class="flex justify-between items-start mb-2"><p class="stat-label">Net Sales</p><span class="info-btn" onclick="salesShowInfo('net')">ⓘ</span></div>
+                    <p class="stat-value text-slate-900 dark:text-white" id="sales-kpi-net">R 0.00</p>
+                    <p class="text-[10px] font-bold text-slate-400 mt-1 uppercase tracking-tighter">Final Trading</p>
+                </div>
+            </div>
+
+            <!-- Charts Row -->
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-10">
+                <div class="lg:col-span-2 space-y-8">
+                    <div class="p-8 bg-white dark:bg-darkCard shadow-sm border border-slate-100 dark:border-darkBorder rounded-xl">
+                        <div class="flex justify-between items-center mb-8">
+                            <h2 class="text-xl font-black dark:text-white tracking-tighter uppercase">Sales Volume by Hour</h2>
+                            <span class="info-btn" onclick="salesShowInfo('hourly')">ⓘ</span>
+                        </div>
+                        <div class="h-64"><canvas id="salesHourlyChart"></canvas></div>
+                    </div>
+                    <div class="p-8 bg-white dark:bg-darkCard shadow-sm border border-slate-100 dark:border-darkBorder rounded-xl">
+                        <div class="flex justify-between items-center mb-6">
+                            <h2 class="text-xl font-black dark:text-white tracking-tighter uppercase">Payment Breakdown</h2>
+                            <span class="info-btn" onclick="salesShowInfo('payments')">ⓘ</span>
+                        </div>
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-sm">
+                                <thead><tr class="text-slate-400 border-b dark:border-darkBorder">
+                                    <th class="pb-4 text-left font-black uppercase text-[10px] tracking-widest">Method</th>
+                                    <th class="pb-4 text-right font-black uppercase text-[10px] tracking-widest">Volume</th>
+                                    <th class="pb-4 text-right font-black uppercase text-[10px] tracking-widest">Amount</th>
+                                    <th class="pb-4 text-right font-black uppercase text-[10px] tracking-widest">Share</th>
+                                </tr></thead>
+                                <tbody id="sales-payment-summary-body" class="divide-y dark:divide-darkBorder"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+                <div class="space-y-8">
+                    <div class="p-8 bg-white dark:bg-darkCard shadow-sm border border-slate-100 dark:border-darkBorder rounded-xl relative">
+                        <span class="info-btn absolute top-8 right-8" onclick="salesShowInfo('site')">ⓘ</span>
+                        <h2 class="text-xl font-black mb-8 text-center dark:text-white tracking-tighter uppercase">Revenue by Site</h2>
+                        <div class="h-56"><canvas id="salesSiteChart"></canvas></div>
+                    </div>
+                    <div class="p-8 bg-slate-950 text-white shadow-2xl relative overflow-hidden rounded-xl">
+                        <div class="absolute -right-10 -top-10 w-32 h-32 bg-indigo-500/10 rounded-full blur-3xl"></div>
+                        <span class="info-btn absolute top-8 right-8 text-white/40 hover:text-white" onclick="salesShowInfo('efficiency')">ⓘ</span>
+                        <h2 class="text-[10px] font-black uppercase tracking-[0.2em] text-indigo-400 mb-2">Efficiency Rating</h2>
+                        <div class="flex items-baseline gap-2">
+                            <p class="text-5xl font-black tracking-tighter" id="sales-avg-transaction-value">R 0</p>
+                            <p class="text-xs font-bold text-white/50">/ Avg Sale</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Employee Matrix -->
+            <div class="mb-10 overflow-hidden bg-white dark:bg-darkCard shadow-sm border border-slate-100 dark:border-darkBorder rounded-xl">
+                <div class="p-8 border-b dark:border-darkBorder flex justify-between items-center bg-slate-50/50 dark:bg-slate-800/30">
+                    <div><h2 class="text-xl font-black text-slate-900 dark:text-white uppercase tracking-tighter">Employee Performance Matrix</h2><p class="text-slate-400 text-xs font-medium">Revenue contribution audit by staff member</p></div>
+                    <div class="flex items-center gap-3">
+                        <button onclick="salesExportMatrixToExcel()" class="flex items-center gap-2 p-2.5 px-4 bg-emerald-50 text-emerald-700 dark:bg-emerald-900/20 dark:text-emerald-400 rounded-xl transition-all font-bold text-[10px] tracking-widest uppercase hover:bg-emerald-600 hover:text-white shadow-sm">
+                            <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zM6 20V4h7v5h5v11H6z"/></svg>
+                            Excel
+                        </button>
+                        <span class="info-btn text-xl" onclick="salesShowInfo('matrix')">ⓘ</span>
+                    </div>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left text-sm whitespace-nowrap">
+                        <thead><tr class="bg-white dark:bg-darkCard text-slate-400 border-b dark:border-darkBorder">
+                            <th class="px-5 py-5 font-black uppercase text-[10px] tracking-widest">Employee</th>
+                            <th class="px-5 py-5 font-black uppercase text-[10px] tracking-widest text-right">Qty</th>
+                            <th class="px-5 py-5 font-black uppercase text-[10px] tracking-widest text-right text-indigo-500">Gross</th>
+                            <th class="px-5 py-5 font-black uppercase text-[10px] tracking-widest text-right">VAT</th>
+                            <th class="px-5 py-5 font-black uppercase text-[10px] tracking-widest text-right text-amber-500">Surch. (INCL)</th>
+                            <th class="px-5 py-5 font-black uppercase text-[10px] tracking-widest text-right text-amber-600">Surch. (EXCL)</th>
+                            <th class="px-5 py-5 font-black uppercase text-[10px] tracking-widest text-right text-rose-500">Refunds</th>
+                            <th class="px-5 py-5 font-black uppercase text-[10px] tracking-widest text-right text-slate-900 dark:text-white">Net Total</th>
+                            <th class="px-5 py-5 font-black uppercase text-[10px] tracking-widest text-right text-emerald-500">Tips</th>
+                        </tr></thead>
+                        <tbody id="sales-employee-matrix-body" class="divide-y dark:divide-darkBorder"></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Audit Log -->
+            <div class="mb-10 overflow-hidden bg-white dark:bg-darkCard shadow-sm border border-slate-100 dark:border-darkBorder rounded-xl">
+                <div class="p-8 border-b dark:border-darkBorder flex flex-col md:flex-row justify-between gap-6">
+                    <div class="flex items-center gap-4">
+                        <div><h2 class="text-xl font-black text-slate-900 dark:text-white uppercase tracking-tighter">Transaction Audit Log</h2><p class="text-xs text-slate-400 font-medium mt-1" id="sales-transaction-count-label">Waiting for records...</p></div>
+                        <span class="info-btn" onclick="salesShowInfo('audit')">ⓘ</span>
+                    </div>
+                    <div class="flex items-center gap-4">
+                        <button onclick="salesExportToExcel()" class="flex items-center gap-2 p-2.5 px-4 bg-emerald-50 text-emerald-700 dark:bg-emerald-900/20 dark:text-emerald-400 rounded-xl transition-all font-bold text-[10px] tracking-widest uppercase hover:bg-emerald-600 hover:text-white shadow-sm">
+                            <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zM6 20V4h7v5h5v11H6z"/></svg>
+                            Excel
+                        </button>
+                        <div class="relative">
+                            <input type="text" id="sales-transaction-search" placeholder="Search invoices or staff..." class="pl-10 pr-4 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-darkBorder dark:text-white rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500 w-full md:w-80 shadow-inner">
+                            <svg class="w-4 h-4 text-slate-400 absolute left-3.5 top-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                        </div>
+                    </div>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left text-sm">
+                        <thead class="bg-slate-50/50 dark:bg-slate-800/30 text-slate-400 uppercase text-[10px] font-black tracking-widest">
+                            <tr><th class="px-8 py-5">Invoice</th><th class="px-8 py-4">Employee</th><th class="px-8 py-4 text-right">Paid (R)</th><th class="px-8 py-4 text-center">Actions</th></tr>
+                        </thead>
+                        <tbody id="sales-transactions-table-body" class="divide-y dark:divide-darkBorder"></tbody>
+                    </table>
+                </div>
+                <div id="sales-pagination-controls" class="p-6 bg-slate-50/50 dark:bg-slate-800/20 border-t dark:border-darkBorder flex justify-between items-center hidden">
+                    <div class="flex items-center gap-3">
+                        <span class="text-[10px] font-black uppercase text-slate-400 tracking-widest">Rows:</span>
+                        <select id="sales-rows-per-page" class="bg-white dark:bg-slate-800 border dark:border-darkBorder rounded-lg px-2 py-1.5 text-xs font-bold focus:ring-2 focus:ring-indigo-500 shadow-sm outline-none">
+                            <option value="10" selected>10</option><option value="25">25</option><option value="50">50</option><option value="100">100</option>
+                        </select>
+                    </div>
+                    <div class="flex items-center gap-4">
+                        <button id="sales-prev-page" class="p-2 border dark:border-darkBorder rounded-xl hover:bg-white dark:hover:bg-slate-700 transition-all shadow-sm"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg></button>
+                        <span id="sales-page-indicator" class="text-xs font-black text-slate-500 uppercase">Page 1 of 1</span>
+                        <button id="sales-next-page" class="p-2 border dark:border-darkBorder rounded-xl hover:bg-white dark:hover:bg-slate-700 transition-all shadow-sm"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg></button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Sales Transaction Modal -->
+        <div id="sales-txn-modal" class="fixed inset-0 z-50 flex items-center justify-center p-4 hidden">
+            <div class="sales-modal-backdrop absolute inset-0" onclick="salesCloseModal()"></div>
+            <div class="bg-white dark:bg-darkCard w-full max-w-2xl rounded-[32px] shadow-2xl relative overflow-hidden flex flex-col max-h-[90vh] border border-white/20">
+                <div class="p-8 border-b dark:border-darkBorder flex justify-between items-center bg-slate-50/50 dark:bg-slate-800/50">
+                    <div><h3 class="text-2xl font-black dark:text-white tracking-tighter" id="sales-modal-title">Invoice #</h3><p class="text-xs font-bold text-slate-400 mt-1 uppercase tracking-widest" id="sales-modal-subtitle">Transaction detail</p></div>
+                    <button onclick="salesCloseModal()" class="p-3 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-2xl transition-all text-slate-400"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M6 18L18 6M6 6l12 12"/></svg></button>
+                </div>
+                <div class="p-8 overflow-y-auto space-y-8">
+                    <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                        <div class="p-4 rounded-2xl bg-indigo-50/50 dark:bg-indigo-900/20 border border-indigo-100 dark:border-indigo-500/20"><p class="text-[10px] uppercase font-black text-indigo-400 mb-1">Paid</p><p class="text-xl font-black text-indigo-700 dark:text-indigo-400" id="sales-modal-paid">R 0.00</p></div>
+                        <div class="p-4 rounded-2xl bg-amber-50/50 dark:bg-amber-900/20 border border-amber-100 dark:border-amber-500/20"><p class="text-[10px] uppercase font-black text-amber-500 mb-1">VAT</p><p class="text-xl font-black text-amber-700 dark:text-amber-500" id="sales-modal-tax">R 0.00</p></div>
+                        <div class="p-4 rounded-2xl bg-orange-50/50 dark:bg-orange-900/20 border border-orange-100 dark:border-orange-500/20"><p class="text-[10px] uppercase font-black text-orange-500 mb-1">Discount</p><p class="text-xl font-black text-orange-700 dark:text-orange-500" id="sales-modal-disc">R 0.00</p></div>
+                        <div class="p-4 rounded-2xl bg-emerald-50/50 dark:bg-emerald-900/20 border border-emerald-100 dark:border-emerald-500/20"><p class="text-[10px] uppercase font-black text-emerald-500 mb-1">Tip</p><p class="text-xl font-black text-emerald-700 dark:text-emerald-500" id="sales-modal-tip">R 0.00</p></div>
+                    </div>
+                    <div>
+                        <h4 class="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 mb-4">Itemized Sale</h4>
+                        <div class="rounded-2xl border dark:border-darkBorder overflow-hidden">
+                            <table class="w-full text-sm">
+                                <thead class="bg-slate-50 dark:bg-slate-800/50 text-slate-400 text-[10px] font-black uppercase tracking-wider"><tr><th class="px-6 py-4 text-left">Product</th><th class="px-6 py-4 text-right">Qty</th><th class="px-6 py-4 text-right">Price</th><th class="px-6 py-4 text-right">Total</th></tr></thead>
+                                <tbody id="sales-modal-items-body" class="divide-y dark:divide-darkBorder dark:text-slate-300"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Sales Info Modal -->
+        <div id="sales-info-modal" class="fixed inset-0 z-[60] flex items-center justify-center p-4 hidden">
+            <div class="sales-modal-backdrop absolute inset-0" onclick="salesCloseInfoModal()"></div>
+            <div class="bg-white dark:bg-darkCard w-full max-w-md rounded-[32px] shadow-2xl relative overflow-hidden p-10 border border-slate-100 dark:border-darkBorder">
+                <div class="w-12 h-12 bg-indigo-50 dark:bg-indigo-900/30 rounded-2xl flex items-center justify-center mb-6 text-indigo-600 dark:text-indigo-400">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                </div>
+                <h3 id="sales-info-title" class="text-2xl font-black mb-4 dark:text-white tracking-tighter">Definition</h3>
+                <div id="sales-info-content" class="text-sm leading-relaxed text-slate-500 dark:text-slate-400 font-medium"></div>
+                <button onclick="salesCloseInfoModal()" class="mt-10 w-full py-4 bg-slate-900 dark:bg-indigo-600 text-white rounded-2xl font-black text-xs uppercase tracking-widest hover:opacity-90 shadow-lg transition-all">Understand</button>
+            </div>
+        </div>
+
+        <!-- Back to Portal -->
+        <button onclick="showView('landing')" class="back-to-portal">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/></svg>
+            Back to Portal
+        </button>
+    </div>
 
     <script>
-        // ─── Theme ───
-        function toggleTheme() {
-            const isLight = document.documentElement.classList.toggle('light');
-            localStorage.theme = isLight ? 'light' : 'dark';
-            updateThemeIcon();
+        // ═══════════════════════════════════════════
+        // ═══ SCROLL LOCK FOR MODALS ═══
+        // ═══════════════════════════════════════════
+        function lockScroll() { document.body.style.overflow = 'hidden'; }
+        function unlockScroll() { document.body.style.overflow = ''; }
+
+        // ═══════════════════════════════════════════
+        // ═══ SPA ROUTER ═══
+        // ═══════════════════════════════════════════
+        function showView(view) {
+            const landing = document.getElementById('view-landing');
+            const fraud = document.getElementById('view-fraud');
+            const sales = document.getElementById('view-sales');
+            // Hide all views
+            landing.classList.add('hidden');
+            fraud.classList.add('hidden');
+            sales.classList.add('hidden');
+            document.body.classList.remove('spa-fraud-active', 'spa-sales-active');
+            if (view === 'fraud') {
+                fraud.classList.remove('hidden');
+                document.body.classList.add('spa-fraud-active');
+                checkSharedData();
+            } else if (view === 'sales') {
+                sales.classList.remove('hidden');
+                document.body.classList.add('spa-sales-active');
+                salesCheckSharedData();
+                if (salesAllTransactions.length > 0) salesRenderCharts(salesAllTransactions);
+            } else {
+                landing.classList.remove('hidden');
+            }
+            window.scrollTo(0, 0);
+            history.pushState({ view }, '', view === 'landing' ? '#' : '#' + view);
         }
-        function updateThemeIcon() {
+
+        window.addEventListener('popstate', (e) => {
+            const view = (e.state && e.state.view) || 'landing';
+            showView(view);
+        });
+
+        // On load: check hash
+        if (window.location.hash === '#fraud') {
+            showView('fraud');
+        } else if (window.location.hash === '#sales') {
+            showView('sales');
+        }
+
+        // ═══════════════════════════════════════════
+        // ═══ UNIFIED THEME ═══
+        // ═══════════════════════════════════════════
+        function toggleTheme() {
+            const html = document.documentElement;
+            if (html.classList.contains('light')) {
+                html.classList.replace('light', 'dark');
+                localStorage.theme = 'dark';
+            } else {
+                html.classList.replace('dark', 'light');
+                localStorage.theme = 'light';
+            }
+            updateLandingThemeIcon();
+        }
+
+        function updateLandingThemeIcon() {
             const isLight = document.documentElement.classList.contains('light');
             document.getElementById('themeIcon').innerHTML = isLight
                 ? '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364-6.364l-.707.707M6.343 17.657l-.707.707M16.95 16.95l.707.707M7.757 7.757l.707.707M12 8a4 4 0 100 8 4 4 0 000-8z"/>'
                 : '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"/>';
         }
-        if (localStorage.theme === 'light') document.documentElement.classList.add('light');
-        updateThemeIcon();
+        updateLandingThemeIcon();
 
-        // ─── Import State ───
+        // ═══════════════════════════════════════════
+        // ═══ LANDING PAGE: IMPORT STATE ═══
+        // ═══════════════════════════════════════════
         function updateImportState() {
             const btn = document.getElementById('importBtn');
             const label = document.getElementById('importLabel');
@@ -781,7 +902,6 @@
         function handleImportClick() {
             const data = localStorage.getItem('yoco_portal_data');
             if (data) {
-                // Already loaded — show a replace warning via modal-like toast
                 const s = document.getElementById('importStatus');
                 s.className = 'import-status cleared';
                 s.innerText = '⚠ A report is already loaded. Importing will replace it.';
@@ -791,7 +911,7 @@
             document.getElementById('globalFile').click();
         }
 
-        // ─── Data Import ───
+        // ─── Data Import (Landing) ───
         document.getElementById('globalFile').addEventListener('change', async (e) => {
             const files = e.target.files;
             if (!files.length) return;
@@ -821,12 +941,8 @@
         });
 
         // ─── Clear Modal ───
-        function openClearModal() {
-            document.getElementById('clearModal').classList.add('show');
-        }
-        function closeClearModal() {
-            document.getElementById('clearModal').classList.remove('show');
-        }
+        function openClearModal() { document.getElementById('clearModal').classList.add('show'); lockScroll(); }
+        function closeClearModal() { document.getElementById('clearModal').classList.remove('show'); unlockScroll(); }
         function confirmClear() {
             closeClearModal();
             localStorage.removeItem('yoco_portal_data');
@@ -835,25 +951,20 @@
             s.innerText = '🗑️ Data Cleared Successfully';
             s.style.display = 'block';
             updateImportState();
+            resetFraudDashboard();
             setTimeout(() => { s.style.display = 'none'; s.className = 'import-status'; showUploadModal(); }, 2000);
         }
 
         // ─── Upload Modal ───
-        function showUploadModal() {
-            document.getElementById('uploadModal').classList.add('show');
-        }
-        function closeUploadModal() {
-            document.getElementById('uploadModal').classList.remove('show');
-        }
+        function showUploadModal() { document.getElementById('uploadModal').classList.add('show'); lockScroll(); }
+        function closeUploadModal() { document.getElementById('uploadModal').classList.remove('show'); unlockScroll(); }
 
-        // Drag & drop support
         const uploadZone = document.getElementById('uploadZone');
         uploadZone.addEventListener('dragover', (e) => { e.preventDefault(); uploadZone.classList.add('dragover'); });
         uploadZone.addEventListener('dragleave', () => uploadZone.classList.remove('dragover'));
         uploadZone.addEventListener('drop', (e) => {
             e.preventDefault(); uploadZone.classList.remove('dragover');
-            const files = e.dataTransfer.files;
-            if (files.length) { processUploadFiles(files); }
+            if (e.dataTransfer.files.length) processUploadFiles(e.dataTransfer.files);
         });
 
         document.getElementById('uploadFileInput').addEventListener('change', (e) => {
@@ -887,25 +998,22 @@
             }
         }
 
-        // Initialize import state on load
         updateImportState();
 
         // ─── Welcome Tutorial ───
         function showWelcome() {
             document.getElementById('tutorialVideo').src = 'https://drive.google.com/file/d/1B8-K8LofVgYCPOq98ux1arntjurIpSYG/preview';
-            document.getElementById('welcomeModal').classList.add('show');
+            document.getElementById('welcomeModal').classList.add('show'); lockScroll();
         }
         function dismissWelcome() {
-            document.getElementById('welcomeModal').classList.remove('show');
-            document.getElementById('tutorialVideo').src = ''; // stop video
+            document.getElementById('welcomeModal').classList.remove('show'); unlockScroll();
+            document.getElementById('tutorialVideo').src = '';
             localStorage.setItem('yoco_tutorial_seen', 'true');
-            // After tutorial, show upload prompt if no data
             if (!localStorage.getItem('yoco_portal_data')) {
                 setTimeout(showUploadModal, 400);
             }
         }
 
-        // On load: show welcome if first visit, otherwise show upload if no data
         if (!localStorage.getItem('yoco_tutorial_seen')) {
             showWelcome();
         } else if (!localStorage.getItem('yoco_portal_data')) {
@@ -921,6 +1029,665 @@
                 dots.forEach((d, i) => d.classList.toggle('active', i === index));
                 document.getElementById('progressBar').style.width = index === 0 ? '50%' : '100%';
             }
+        }
+
+        // Theme Sync Listener (cross-tab)
+        window.addEventListener('storage', (e) => {
+            if (e.key === 'theme') {
+                const html = document.documentElement;
+                if (e.newValue === 'light') { html.classList.remove('dark'); html.classList.add('light'); }
+                else { html.classList.remove('light'); html.classList.add('dark'); }
+                updateLandingThemeIcon();
+            }
+            if (e.key === 'yoco_portal_data') {
+                updateImportState();
+                checkSharedData();
+                salesCheckSharedData();
+            }
+        });
+
+        // ═══════════════════════════════════════════
+        // ═══ FRAUD DASHBOARD LOGIC ═══
+        // ═══════════════════════════════════════════
+        let rawSales = []; let rawItems = []; let employees = {}; let tipChart = null;
+        let reportDateRangeStr = "";
+        let sortStates = { tips: { key: 'Employee Name', dir: 1 }, voids: { key: 'Employee Name', dir: 1 }, parking: { key: 'Employee Name', dir: 1 } };
+        const fmt = new Intl.NumberFormat('en-ZA', { style: 'currency', currency: 'ZAR' });
+
+        const infoTexts = {
+            summary: `<p><strong>Weighted Risk:</strong> Staff are ranked based on "Alert Points":</p><ul class="list-disc ml-4 space-y-1"><li>10 pts per Tip > 30%</li><li>1 pt per R10 voided</li><li>5 pts per Long Bill (>4hrs)</li></ul>`,
+            tips: `<p><strong>High Tip Risk:</strong> Ratios over 30% are flagged. Ratios over 100% usually indicate card cashing fraud or server error.</p>`,
+            voids: `<p><strong>The Pocketing Risk:</strong> High voids on cash tables are a red flag. Items may be removed after payment to pocket the cash difference.</p>`,
+            parking: `<p><strong>Bill Parking Identification:</strong> Identification relies on tracking the lifecycle of a table slot.</p><p><strong>Key Variables:</strong></p><ul class="list-disc ml-4 space-y-1"><li><strong>Bill Created Time:</strong> When the first item was rung up.</li><li><strong>Bill Invoice Time:</strong> When the final payment was processed.</li><li><strong>Bill Duration:</strong> The total minutes between creation and finalization.</li></ul>`
+        };
+
+        function formatDuration(mins) {
+            if (!mins) return "0m";
+            const h = Math.floor(mins / 60), m = mins % 60;
+            return h > 0 ? `${h}h ${m}m` : `${m}m`;
+        }
+
+        const getTimeOnly = (ts) => ts && ts.includes(' - ') ? ts.split(' - ')[1] : (ts || "N/A");
+
+        function checkSharedData() {
+            const shared = localStorage.getItem('yoco_portal_data');
+            if (shared) {
+                const data = JSON.parse(shared);
+                rawSales = data.sales || [];
+                rawItems = data.items || [];
+                if (data.info && data.info.length) {
+                    const dateRangeRow = data.info.find(r => r[0] === 'Date Range');
+                    if (dateRangeRow) reportDateRangeStr = dateRangeRow[1] || "";
+                }
+                if (rawSales.length) { processData(rawSales); showFraudDashboard(); }
+            }
+        }
+
+        function showFraudDashboard() {
+            document.getElementById('welcomeState').classList.add('hidden');
+            ['statsGrid', 'mainContent', 'pdfBtn'].forEach(id => document.getElementById(id).classList.remove('hidden'));
+            const rangeEl = document.getElementById('dashboardDateRange');
+            if (reportDateRangeStr) {
+                rangeEl.innerText = `Report Period: ${reportDateRangeStr}`;
+                rangeEl.classList.remove('hidden');
+            } else rangeEl.classList.add('hidden');
+        }
+
+        function resetFraudDashboard() {
+            rawSales = []; rawItems = []; employees = {}; reportDateRangeStr = "";
+            document.getElementById('welcomeState').classList.remove('hidden');
+            ['statsGrid', 'mainContent', 'pdfBtn', 'dashboardDateRange'].forEach(id => document.getElementById(id).classList.add('hidden'));
+        }
+
+        function processData(data) {
+            employees = {}; let totals = { voids: 0, tips: 0, sales: 0, anomalies: 0 };
+            let dates = [];
+            data.forEach(row => {
+                const name = row['Employee Name'] || 'Unknown';
+                const tipRatio = parseFloat(row['Tip Ratio']) || 0;
+                const voids = parseFloat(row['Voids Total']) || 0;
+                const duration = parseInt(row['Bill Duration (minutes)']) || 0;
+                const gross = parseFloat(row['Gross Sale Amount']) || 0;
+                const tip = parseFloat(row['Tip']) || 0;
+                if (row['Bill Created Time']) dates.push(row['Bill Created Time']);
+                if (!employees[name]) employees[name] = { name, totalSales: 0, totalTips: 0, totalVoids: 0, highTips: 0, longBills: 0, txCount: 0, riskScore: 0 };
+                employees[name].totalSales += gross; employees[name].totalTips += tip; employees[name].totalVoids += voids;
+                employees[name].txCount++;
+                if (tipRatio > 0.3) { employees[name].highTips++; totals.anomalies++; }
+                if (duration > 240) employees[name].longBills++;
+                totals.voids += voids; totals.tips += tip; totals.sales += gross;
+            });
+            if (!reportDateRangeStr && dates.length > 0) {
+                try { const sd = dates.sort(); const s = sd[0].split(' - ')[0]; const e = sd[sd.length-1].split(' - ')[0]; reportDateRangeStr = s===e ? s : `${s} to ${e}`; } catch(e) {}
+            }
+            Object.values(employees).forEach(emp => { emp.riskScore = (emp.highTips * 10) + (emp.totalVoids / 10) + (emp.longBills * 5); });
+            updateStats(totals); renderSummary(); renderAllTables(); renderChart();
+        }
+
+        function updateStats(totals) {
+            document.getElementById('statTotalVoids').innerText = fmt.format(totals.voids);
+            document.getElementById('statAvgTip').innerText = ((totals.tips / totals.sales) * 100).toFixed(1) + '%';
+            document.getElementById('statHighRisk').innerText = totals.anomalies;
+            document.getElementById('statTotalSales').innerText = fmt.format(totals.sales);
+        }
+
+        function renderSummary() {
+            const container = document.getElementById('employeeCards'); container.innerHTML = '';
+            const allEmp = Object.values(employees);
+            const groups = {
+                high: allEmp.filter(e => e.riskScore >= 50).sort((a,b) => b.riskScore - a.riskScore),
+                medium: allEmp.filter(e => e.riskScore > 0 && e.riskScore < 50).sort((a,b) => b.riskScore - a.riskScore),
+                low: allEmp.filter(e => e.riskScore === 0)
+            };
+            const renderGroup = (title, emps, riskClass, color) => {
+                if (emps.length === 0) return;
+                const section = document.createElement('div');
+                section.className = 'space-y-4';
+                section.innerHTML = `<h3 class="font-black text-xs uppercase tracking-[0.2em] ${color} mb-2">${title} (${emps.length})</h3>`;
+                emps.forEach(emp => {
+                    const avgTip = (emp.totalTips / emp.totalSales) * 100;
+                    section.innerHTML += `<div class="${riskClass} bg-white dark:bg-slate-800 dark:border dark:border-slate-700 p-6 rounded-xl custom-shadow flex flex-col md:flex-row md:items-center justify-between gap-4 transition-all hover:translate-x-1">
+                        <div class="flex-1 text-slate-900 dark:text-slate-100"><h4 class="text-xl font-bold">${emp.name}</h4><div class="grid grid-cols-2 md:grid-cols-5 mt-2 gap-4 text-xs font-semibold">
+                        <div><p class="text-slate-400 uppercase tracking-tighter text-[9px]">Sales</p><p>${fmt.format(emp.totalSales)}</p></div>
+                        <div><p class="text-slate-400 uppercase tracking-tighter text-[9px]">Total Tips</p><p class="text-blue-600 font-bold">${fmt.format(emp.totalTips)}</p></div>
+                        <div><p class="text-slate-400 uppercase tracking-tighter text-[9px]">Avg Tip %</p><p>${isNaN(avgTip) ? '0' : avgTip.toFixed(1)}%</p></div>
+                        <div><p class="text-red-400 uppercase tracking-tighter text-[9px]">Voids</p><p class="text-red-500">${fmt.format(emp.totalVoids)}</p></div>
+                        <div><p class="text-orange-400 uppercase tracking-tighter text-[9px]">High Tip Tx</p><p class="text-orange-500">${emp.highTips}</p></div></div></div>
+                        <div class="text-right text-[10px] font-bold text-slate-400 uppercase">${emp.txCount} Bills ${emp.longBills > 0 ? `<br><span class="text-amber-500">⚠️ ${emp.longBills} Long</span>` : ''}</div></div>`;
+                });
+                container.appendChild(section);
+            };
+            renderGroup('High Risk Employees', groups.high, 'risk-high', 'text-red-500');
+            renderGroup('Medium Risk Employees', groups.medium, 'risk-medium', 'text-amber-500');
+            renderGroup('Low Risk Employees', groups.low, '', 'text-slate-400');
+        }
+
+        function renderAllTables() {
+            renderTable('tips', rawSales.filter(r => (parseFloat(r['Tip Ratio']) || 0) > 0.25));
+            renderTable('voids', rawSales.filter(r => (parseFloat(r['Voids Total']) || 0) > 0));
+            renderTable('parking', rawSales.filter(r => (parseInt(r['Bill Duration (minutes)']) || 0) > 180));
+        }
+
+        function sortTable(type, key) { const s = sortStates[type]; if (s.key === key) s.dir *= -1; else { s.key = key; s.dir = 1; } renderAllTables(); }
+
+        function renderTable(type, data) {
+            const table = document.getElementById(type + 'Table'); const s = sortStates[type];
+            const sorted = [...data].sort((a, b) => { let va = a[s.key], vb = b[s.key]; return (va < vb ? -1 : va > vb ? 1 : 0) * s.dir; });
+            table.innerHTML = '';
+            sorted.forEach(r => {
+                const row = document.createElement('tr'); row.className = 'border-b dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800/50 text-slate-900 dark:text-slate-100';
+                let cells = `<td class="p-4 font-mono text-xs text-blue-500">${r['Invoice Number']}</td><td class="p-4">${r['Employee Name']}</td><td class="p-4 text-[10px] text-slate-500 leading-tight">${getTimeOnly(r['Bill Created Time'])}</td><td class="p-4 text-[10px] text-slate-500 leading-tight">${getTimeOnly(r['Bill Invoice Time'])}</td>`;
+                if (type === 'tips') cells += `<td class="p-4">${fmt.format(r['Gross Sale Amount'])}</td><td class="p-4 text-red-500 font-bold">${fmt.format(r['Tip'])}</td><td class="p-4"><span class="bg-red-500/10 text-red-500 px-2 py-0.5 rounded text-[10px] font-bold">${(parseFloat(r['Tip Ratio'])*100).toFixed(1)}%</span></td>`;
+                if (type === 'voids') cells += `<td class="p-4">${fmt.format(r['Gross Sale Amount'])}</td><td class="p-4 text-red-500 font-bold">${fmt.format(r['Voids Total'])}</td>`;
+                if (type === 'parking') cells += `<td class="p-4 font-bold text-orange-500">${formatDuration(r['Bill Duration (minutes)'])}</td><td class="p-4">${fmt.format(r['Gross Sale Amount'])}</td>`;
+                cells += `<td class="p-4 text-center"><button onclick="viewInvoice('${r['Invoice Number']}')" class="text-slate-400 hover:text-blue-500 transition-colors">👁</button></td>`;
+                row.innerHTML = cells; table.appendChild(row);
+            });
+        }
+
+        function exportSectionToExcel(type) {
+            const wb = XLSX.utils.book_new();
+            let filename = `Fraud_Audit_${type}_${new Date().toLocaleDateString('en-ZA').replace(/\//g, '-')}.xlsx`;
+            let summaryData = [], detailData = [];
+            if (type === 'tips') {
+                const invoices = rawSales.filter(r => (parseFloat(r['Tip Ratio']) || 0) > 0.25);
+                summaryData = invoices.map(r => ({ Invoice: r['Invoice Number'], Employee: r['Employee Name'], Opened: r['Bill Created Time'], Closed: r['Bill Invoice Time'], 'Sale Amt': r['Gross Sale Amount'], Tip: r['Tip'], 'Ratio %': (parseFloat(r['Tip Ratio'])*100).toFixed(2) }));
+                const ids = invoices.map(r => r['Invoice Number']);
+                detailData = rawItems.filter(i => ids.includes(i['Invoice Number'])).map(i => ({ Invoice: i['Invoice Number'], Product: i['Product'], Qty: i['Quantity'], Price: i['Item Price'], Total: i['Item Total'], Status: i['Status'], Employee: i['Employee Name'] }));
+            } else if (type === 'voids') {
+                const invoices = rawSales.filter(r => (parseFloat(r['Voids Total']) || 0) > 0);
+                summaryData = invoices.map(r => ({ Invoice: r['Invoice Number'], Employee: r['Employee Name'], Opened: r['Bill Created Time'], Closed: r['Bill Invoice Time'], 'Sale Total': r['Gross Sale Amount'], 'Void Value': r['Voids Total'] }));
+                const ids = invoices.map(r => r['Invoice Number']);
+                detailData = rawItems.filter(i => ids.includes(i['Invoice Number'])).map(i => ({ Invoice: i['Invoice Number'], Product: i['Product'], Qty: i['Quantity'], Price: i['Item Price'], Total: i['Item Total'], Status: i['Status'] || 'Served', Employee: i['Employee Name'] }));
+            } else if (type === 'parking') {
+                const invoices = rawSales.filter(r => (parseInt(r['Bill Duration (minutes)']) || 0) > 180);
+                summaryData = invoices.map(r => ({ Invoice: r['Invoice Number'], Employee: r['Employee Name'], Opened: r['Bill Created Time'], Closed: r['Bill Invoice Time'], Duration: formatDuration(r['Bill Duration (minutes)']), 'Sale Amt': r['Gross Sale Amount'] }));
+                const ids = invoices.map(r => r['Invoice Number']);
+                detailData = rawItems.filter(i => ids.includes(i['Invoice Number'])).map(i => ({ Invoice: i['Invoice Number'], Product: i['Product'], Qty: i['Quantity'], Price: i['Item Price'], Total: i['Item Total'], Status: i['Status'], Employee: i['Employee Name'] }));
+            }
+            const wsSum = XLSX.utils.json_to_sheet(summaryData);
+            XLSX.utils.book_append_sheet(wb, wsSum, "Summary");
+            if(detailData.length > 0) {
+                const wsDet = XLSX.utils.json_to_sheet(detailData);
+                const range = XLSX.utils.decode_range(wsDet['!ref']);
+                for(let R = range.s.r + 1; R <= range.e.r; ++R) {
+                    const statusCell = wsDet[XLSX.utils.encode_cell({r:R, c:5})];
+                    if(statusCell && statusCell.v && (statusCell.v.toLowerCase().includes('void') || statusCell.v.toLowerCase().includes('return'))) {
+                        for(let C = range.s.c; C <= range.e.c; ++C) {
+                            const addr = XLSX.utils.encode_cell({r:R, c:C});
+                            if(!wsDet[addr]) wsDet[addr] = {v:""};
+                            wsDet[addr].s = { font: { color: { rgb: "FF0000" }, bold: true }, fill: { fgColor: { rgb: "FFF1F2" } } };
+                        }
+                    }
+                }
+                XLSX.utils.book_append_sheet(wb, wsDet, "Invoice Details");
+            }
+            XLSX.writeFile(wb, filename);
+        }
+
+        function showInfo(s) { document.getElementById('infoModalTitle').innerText = s.toUpperCase(); document.getElementById('infoModalContent').innerHTML = infoTexts[s]; document.getElementById('infoModal').classList.remove('hidden'); lockScroll(); }
+        function closeInfo() { document.getElementById('infoModal').classList.add('hidden'); unlockScroll(); }
+        function closeModal() { document.getElementById('invoiceModal').classList.add('hidden'); unlockScroll(); }
+
+        function viewInvoice(id) {
+            const s = rawSales.find(x => x['Invoice Number'] === id); if (!s) return;
+            document.getElementById('modalInvoiceId').innerText = id; document.getElementById('modalEmployee').innerText = s['Employee Name'];
+            document.getElementById('modalSummary').innerHTML = `
+                <div><p class="text-[10px] text-slate-400 uppercase font-bold">Total</p><p class="font-bold text-slate-900 dark:text-slate-100">${fmt.format(s['Gross Sale Amount'])}</p></div>
+                <div><p class="text-[10px] text-slate-400 uppercase font-bold">Tip</p><p class="font-bold text-blue-500">${fmt.format(s['Tip'])}</p></div>
+                <div><p class="text-[10px] text-slate-400 uppercase font-bold text-red-500">Void</p><p class="font-bold text-red-500">${fmt.format(s['Voids Total'])}</p></div>
+                <div class="col-span-3 pt-2 border-t dark:border-slate-700 flex justify-between">
+                    <div><p class="text-[8px] text-slate-400 uppercase">Opened</p><p class="text-xs">${getTimeOnly(s['Bill Created Time'])}</p></div>
+                    <div><p class="text-[8px] text-slate-400 uppercase">Closed</p><p class="text-xs text-right">${getTimeOnly(s['Bill Invoice Time'])}</p></div>
+                </div>`;
+            const t = document.getElementById('modalItemsTable'); t.innerHTML = '';
+            const items = rawItems.filter(i => i['Invoice Number'] === id);
+            if (items.length) {
+                items.forEach(i => {
+                    const isVoided = (i['Status'] === 'returned' || i['Status'] === 'voided' || (i['Status'] && i['Status'].toLowerCase().includes('void')));
+                    const rowClass = isVoided ? 'bg-red-50 dark:bg-red-900/20 text-red-600 font-semibold' : 'border-b dark:border-slate-700 text-slate-900 dark:text-slate-100';
+                    t.innerHTML += `<tr class="${rowClass}"><td class="py-2 px-1 flex items-center justify-between">${i['Product']} ${isVoided ? '<span class="ml-2 text-[8px] bg-red-600 text-white px-1 py-0.5 rounded font-black tracking-tighter">VOIDED</span>' : ''}</td><td class="py-2 text-center">${i['Quantity']}</td><td class="py-2 text-right font-bold">${fmt.format(i['Item Total'])}</td></tr>`;
+                });
+            } else t.innerHTML = `<tr><td colspan="3" class="p-8 text-center text-slate-400 italic">No item detail available.</td></tr>`;
+            document.getElementById('invoiceModal').classList.remove('hidden'); lockScroll();
+        }
+
+        function renderChart() {
+            const ctx = document.getElementById('tipChart').getContext('2d'); if(tipChart) tipChart.destroy();
+            const flagged = Object.values(employees).filter(e => e.riskScore > 0).sort((a, b) => (b.totalTips / b.totalSales) - (a.totalTips / a.totalSales));
+            const labels = flagged.map(e => e.name);
+            const data = flagged.map(e => (e.totalTips / e.totalSales) * 100);
+            tipChart = new Chart(ctx, { type: 'bar', data: { labels, datasets: [{ label: 'Tip %', data, backgroundColor: data.map(v => v > 30 ? '#ef4444' : '#3b82f6'), borderRadius: 6 }] }, options: { indexAxis: 'y', plugins: { legend: { display: false } }, scales: { x: { grid: { display: false }, ticks: { color: '#94a3b8' } }, y: { grid: { display: false }, ticks: { color: '#94a3b8' } } } } });
+        }
+
+        function switchTab(id) {
+            document.querySelectorAll('.tab-section').forEach(s => s.classList.add('hidden'));
+            document.querySelectorAll('[id^="tab-"]').forEach(t => { t.classList.remove('tab-active'); t.classList.add('text-slate-500'); });
+            document.getElementById('section-' + id).classList.remove('hidden');
+            document.getElementById('tab-' + id).classList.add('tab-active');
+            document.getElementById('tab-' + id).classList.remove('text-slate-500');
+        }
+
+        // Initialize fraud data on load
+        checkSharedData();
+
+        // ═══ PDF REPORT GENERATION ═══
+        function generatePDFReport() {
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+            const dateStr = new Date().toLocaleDateString('en-ZA');
+            const pageWidth = doc.internal.pageSize.getWidth();
+            const siteName = (rawSales[0] && rawSales[0]['Site']) || 'Restaurant';
+            doc.setFontSize(22); doc.setFont(undefined, 'bold');
+            doc.text("Employee Risk Assessment Report", 14, 20);
+            doc.setFontSize(10); doc.setFont(undefined, 'normal'); doc.setTextColor(100);
+            doc.text(`Generated on: ${dateStr}`, 14, 28);
+            doc.setDrawColor(0); doc.setLineWidth(0.5);
+            doc.line(14, 31, pageWidth - 14, 31);
+            doc.setFontSize(12); doc.setFont(undefined, 'bold'); doc.setTextColor(0);
+            doc.text(siteName, 14, 37);
+            doc.setFontSize(9); doc.setFont(undefined, 'normal'); doc.setTextColor(120);
+            doc.text(`Generated: ${dateStr}`, pageWidth - 14, 37, { align: 'right' });
+            let yPos = 42;
+            if (reportDateRangeStr) {
+                doc.setFont(undefined, 'bold'); doc.setTextColor(37, 99, 235);
+                doc.text(`Report Period: ${reportDateRangeStr}`, 14, yPos);
+                doc.setFont(undefined, 'normal'); yPos += 5;
+            }
+            doc.setTextColor(100); doc.text(`Target: Fraud Detection & Integrity Audit`, 14, yPos); yPos += 10;
+            doc.setDrawColor(0); doc.setLineWidth(0.5);
+            doc.line(14, yPos, pageWidth - 14, yPos); yPos += 8;
+
+            const totalVoidsVal = Object.values(employees).reduce((s, e) => s + e.totalVoids, 0);
+            const totalSalesVal = Object.values(employees).reduce((s, e) => s + e.totalSales, 0);
+            const totalTipsVal = Object.values(employees).reduce((s, e) => s + e.totalTips, 0);
+            const avgTipRatio = totalSalesVal > 0 ? ((totalTipsVal / totalSalesVal) * 100).toFixed(1) : '0';
+            const highRiskCount = Object.values(employees).filter(e => e.riskScore >= 50).length;
+            const totalAnomalies = Object.values(employees).reduce((s, e) => s + e.highTips, 0);
+
+            doc.setFontSize(9); doc.setTextColor(100); doc.setFont(undefined, 'bold');
+            const kpiLabels = ['TOTAL VOIDS', 'AVG TIP RATIO', 'HIGH RISK', 'ANOMALIES', 'TOTAL SALES'];
+            const kpiValues = [fmt.format(totalVoidsVal), avgTipRatio + '%', String(highRiskCount), String(totalAnomalies), fmt.format(totalSalesVal)];
+            const kpiW = (pageWidth - 28) / kpiLabels.length;
+            kpiLabels.forEach((label, i) => {
+                const x = 14 + i * kpiW;
+                doc.setFontSize(7); doc.setTextColor(130); doc.text(label, x, yPos);
+                doc.setFontSize(12); doc.setTextColor(0); doc.text(kpiValues[i], x, yPos + 5);
+            });
+            yPos += 15;
+
+            const allEmp = Object.values(employees).sort((a, b) => b.riskScore - a.riskScore);
+            doc.setFontSize(13); doc.setTextColor(0); doc.setFont(undefined, 'bold');
+            doc.text("1. Employee Risk Summary", 14, yPos); yPos += 3;
+            const empTableData = allEmp.map(e => {
+                const avgTip = e.totalSales > 0 ? ((e.totalTips / e.totalSales) * 100).toFixed(1) + '%' : '0%';
+                const riskLabel = e.riskScore >= 50 ? 'HIGH' : e.riskScore > 0 ? 'MEDIUM' : 'LOW';
+                return [e.name, riskLabel, String(e.txCount), fmt.format(e.totalSales), fmt.format(e.totalTips), avgTip, fmt.format(e.totalVoids), String(e.highTips), String(e.longBills)];
+            });
+            doc.autoTable({
+                startY: yPos,
+                head: [['Employee', 'Risk', 'Bills', 'Sales', 'Tips', 'Tip %', 'Voids', 'High Tips', 'Long Bills']],
+                body: empTableData, theme: 'striped',
+                headStyles: { fillColor: [37, 99, 235], fontSize: 7, fontStyle: 'bold' },
+                bodyStyles: { fontSize: 7 },
+                columnStyles: { 0: { fontStyle: 'bold' }, 1: { halign: 'center', cellWidth: 16 }, 2: { halign: 'center', cellWidth: 12 }, 7: { halign: 'center', cellWidth: 16 }, 8: { halign: 'center', cellWidth: 18 } },
+                didParseCell: function(data) {
+                    if (data.section === 'body' && data.column.index === 1) {
+                        if (data.cell.raw === 'HIGH') { data.cell.styles.textColor = [220, 38, 38]; data.cell.styles.fontStyle = 'bold'; }
+                        else if (data.cell.raw === 'MEDIUM') { data.cell.styles.textColor = [217, 119, 6]; data.cell.styles.fontStyle = 'bold'; }
+                        else { data.cell.styles.textColor = [100, 116, 139]; }
+                    }
+                }
+            });
+
+            const tipRows = rawSales.filter(r => (parseFloat(r['Tip Ratio']) || 0) > 0.25);
+            if (tipRows.length > 0) {
+                yPos = doc.lastAutoTable.finalY + 12;
+                if (yPos > 250) { doc.addPage(); yPos = 20; }
+                doc.setFontSize(13); doc.setTextColor(0); doc.setFont(undefined, 'bold');
+                doc.text(`2. Suspicious Tips Detail (${tipRows.length} flagged)`, 14, yPos); yPos += 3;
+                doc.autoTable({
+                    startY: yPos,
+                    head: [['Invoice', 'Employee', 'Opened', 'Closed', 'Sale', 'Tip', 'Ratio']],
+                    body: tipRows.sort((a, b) => (parseFloat(b['Tip Ratio']) || 0) - (parseFloat(a['Tip Ratio']) || 0)).map(r => [r['Invoice Number'], r['Employee Name'], getTimeOnly(r['Bill Created Time']), getTimeOnly(r['Bill Invoice Time']), fmt.format(parseFloat(r['Gross Sale Amount']) || 0), fmt.format(parseFloat(r['Tip']) || 0), ((parseFloat(r['Tip Ratio']) || 0) * 100).toFixed(1) + '%']),
+                    theme: 'striped', headStyles: { fillColor: [220, 38, 38], fontSize: 7, fontStyle: 'bold' }, bodyStyles: { fontSize: 7 },
+                    columnStyles: { 0: { cellWidth: 22 }, 5: { textColor: [220, 38, 38], fontStyle: 'bold' }, 6: { fontStyle: 'bold', halign: 'center' } }
+                });
+            }
+
+            const voidRows = rawSales.filter(r => (parseFloat(r['Voids Total']) || 0) > 0);
+            if (voidRows.length > 0) {
+                yPos = doc.lastAutoTable.finalY + 12;
+                if (yPos > 250) { doc.addPage(); yPos = 20; }
+                doc.setFontSize(13); doc.setTextColor(0); doc.setFont(undefined, 'bold');
+                doc.text(`3. Voids Audit (${voidRows.length} transactions)`, 14, yPos); yPos += 3;
+                doc.autoTable({
+                    startY: yPos,
+                    head: [['Invoice', 'Employee', 'Opened', 'Closed', 'Sale', 'Void Amount']],
+                    body: voidRows.sort((a, b) => (parseFloat(b['Voids Total']) || 0) - (parseFloat(a['Voids Total']) || 0)).map(r => [r['Invoice Number'], r['Employee Name'], getTimeOnly(r['Bill Created Time']), getTimeOnly(r['Bill Invoice Time']), fmt.format(parseFloat(r['Gross Sale Amount']) || 0), fmt.format(parseFloat(r['Voids Total']) || 0)]),
+                    theme: 'striped', headStyles: { fillColor: [245, 158, 11], fontSize: 7, fontStyle: 'bold' }, bodyStyles: { fontSize: 7 },
+                    columnStyles: { 0: { cellWidth: 22 }, 5: { textColor: [220, 38, 38], fontStyle: 'bold' } }
+                });
+            }
+
+            const parkRows = rawSales.filter(r => (parseInt(r['Bill Duration (minutes)']) || 0) > 180);
+            if (parkRows.length > 0) {
+                yPos = doc.lastAutoTable.finalY + 12;
+                if (yPos > 250) { doc.addPage(); yPos = 20; }
+                doc.setFontSize(13); doc.setTextColor(0); doc.setFont(undefined, 'bold');
+                doc.text(`4. Bill Parking (${parkRows.length} long bills)`, 14, yPos); yPos += 3;
+                doc.autoTable({
+                    startY: yPos,
+                    head: [['Invoice', 'Employee', 'Opened', 'Closed', 'Duration', 'Sale']],
+                    body: parkRows.sort((a, b) => (parseInt(b['Bill Duration (minutes)']) || 0) - (parseInt(a['Bill Duration (minutes)']) || 0)).map(r => [r['Invoice Number'], r['Employee Name'], getTimeOnly(r['Bill Created Time']), getTimeOnly(r['Bill Invoice Time']), formatDuration(parseInt(r['Bill Duration (minutes)']) || 0), fmt.format(parseFloat(r['Gross Sale Amount']) || 0)]),
+                    theme: 'striped', headStyles: { fillColor: [100, 116, 139], fontSize: 7, fontStyle: 'bold' }, bodyStyles: { fontSize: 7 },
+                    columnStyles: { 0: { cellWidth: 22 }, 4: { fontStyle: 'bold', textColor: [217, 119, 6] } }
+                });
+            }
+
+            const totalPages = doc.internal.getNumberOfPages();
+            for (let i = 1; i <= totalPages; i++) {
+                doc.setPage(i);
+                doc.setFontSize(7); doc.setTextColor(150); doc.setFont(undefined, 'normal');
+                doc.text(`Fraud Detection & Integrity Audit • Page ${i} of ${totalPages}`, 14, doc.internal.pageSize.getHeight() - 10);
+                doc.text(`Generated: ${new Date().toLocaleString('en-ZA')}`, pageWidth - 14, doc.internal.pageSize.getHeight() - 10, { align: 'right' });
+            }
+            doc.save(`Restaurant_Fraud_Report_${dateStr.replace(/\//g, '-')}.pdf`);
+        }
+
+        // ═══════════════════════════════════════════
+        // ═══ SALES DASHBOARD LOGIC ═══
+        // ═══════════════════════════════════════════
+        const salesFormatCurrency = (val) => new Intl.NumberFormat('en-ZA', { style: 'currency', currency: 'ZAR' }).format(val || 0);
+        let salesAllTransactions = [];
+        let salesItemizedRecords = [];
+        let salesFilteredTransactions = [];
+        let salesCurrentPage = 1;
+        let salesRowsPerPage = 10;
+        let salesCharts = {};
+        let salesRawInfoData = null;
+
+        const salesInfoTexts = {
+            gross: { title: "Gross Sales", content: "The total value of all items sold before any deductions." },
+            vat: { title: "Total VAT", content: "The total Value Added Tax component calculated from your sales." },
+            discounts: { title: "Discounts", content: "The total value of all price reductions applied." },
+            refunds: { title: "Refunds", content: "Total value of returns or reversals." },
+            tips: { title: "Total Tips", content: "Cumulative gratuity given by customers." },
+            net: { title: "Net Sale Amount", content: "The final trading figure after subtracting VAT, Discounts, and Refunds from Gross Sales." },
+            hourly: { title: "Sales Volume by Hour", content: "A visualization showing peak traffic times." },
+            payments: { title: "Payment Breakdown", content: "Summary of money received, categorized by payment method." },
+            site: { title: "Revenue by Site", content: "Distribution showing which location generates the most revenue." },
+            efficiency: { title: "Efficiency (Avg. Sale)", content: "Calculated by dividing Gross Sales by Transactions." },
+            matrix: { title: "Employee Matrix", content: "Deep audit of productivity per staff member." },
+            audit: { title: "Audit Log", content: "Searchable list of every invoice." }
+        };
+
+        function salesShowInfo(key) {
+            const info = salesInfoTexts[key]; if (!info) return;
+            document.getElementById('sales-info-title').textContent = info.title;
+            document.getElementById('sales-info-content').innerHTML = info.content;
+            document.getElementById('sales-info-modal').classList.remove('hidden'); lockScroll();
+        }
+        function salesCloseInfoModal() { document.getElementById('sales-info-modal').classList.add('hidden'); unlockScroll(); }
+
+        function salesCheckSharedData() {
+            const shared = localStorage.getItem('yoco_portal_data');
+            if (shared) {
+                const data = JSON.parse(shared);
+                salesItemizedRecords = data.items || [];
+                salesRawInfoData = data.info || null;
+                if (data.sales && data.sales.length) {
+                    salesProcessData(data.sales, salesRawInfoData);
+                    document.getElementById('sales-pdf-export-btn').disabled = false;
+                }
+            }
+        }
+
+        function salesProcessData(sales, info) {
+            salesAllTransactions = sales.map(row => {
+                const disc = parseFloat(row['Discount (Other)'] || 0) + parseFloat(row['Discount (Munch)'] || 0) + parseFloat(row['Discount'] || 0);
+                const billTotal = row['Bill Total'] !== undefined ? parseFloat(row['Bill Total']) : (parseFloat(row['Gross Sale Amount'] || 0) - disc);
+                const surcharge = parseFloat(row['Surcharge'] || row['Total Surcharge'] || row['Surcharges'] || row['Surcharges Total'] || 0);
+                let methodsStr = String(row['Payment Methods'] || row['Method'] || 'Other');
+                let methodsArr = methodsStr.split(',').map(s => { let t = s.trim(); return t.charAt(0).toUpperCase() + t.slice(1).toLowerCase(); }).filter(s => s);
+                if(methodsArr.length === 0) methodsArr = ['Other'];
+                let tenders = []; let exactFound = false; let calculatedRemaining = billTotal;
+                methodsArr.forEach(m => {
+                    let amt = 0;
+                    Object.keys(row).forEach(k => { if (k.toLowerCase() === m.toLowerCase() || k.toLowerCase() === m.toLowerCase() + ' amount') { const parsed = parseFloat(row[k]); if (!isNaN(parsed)) amt = parsed; } });
+                    if (amt > 0) { tenders.push({ method: m, amount: amt }); calculatedRemaining -= amt; exactFound = true; }
+                });
+                if (!exactFound || Math.abs(calculatedRemaining) > 0.05) {
+                    tenders = []; const splitAmount = billTotal / methodsArr.length;
+                    methodsArr.forEach(m => { tenders.push({ method: m, amount: splitAmount }); });
+                }
+                return { inv: row['Invoice Number'] || row['Invoice'], emp: row['Employee Name'] || row['Employee'], site: row['Site'], time: row['Bill Invoice Time'] || row['Time'], gross: parseFloat(row['Gross Sale Amount'] || row['Bill Total'] || 0), billTotal, vat: parseFloat(row['Total VAT'] || row['Total Tax'] || 0), refunds: parseFloat(row['Refunds Total'] || row['Total Refunds'] || 0), voids: parseFloat(row['Voids Total'] || row['Total Voids'] || 0), surcharges: surcharge, discounts: disc, net: parseFloat(row['Net Sale Amount'] || 0), tip: parseFloat(row['Tip'] || row['Total Tip'] || 0), method: methodsStr, tenders };
+            }).filter(t => t.inv);
+            salesFilteredTransactions = [...salesAllTransactions];
+            salesCurrentPage = 1;
+            salesUpdateKPIs(salesAllTransactions);
+            salesRenderCharts(salesAllTransactions);
+            salesRenderPaymentSummary(salesAllTransactions);
+            salesRenderEmployeeMatrix(salesAllTransactions);
+            salesRenderTransactions();
+            if (info) { const range = info.find(r => r[0] === 'Date Range'); if (range) document.getElementById('sales-report-period').textContent = range[1]; }
+        }
+
+        function salesUpdateKPIs(data) {
+            const t = data.reduce((acc, c) => { acc.g += c.gross; acc.v += c.vat; acc.d += c.discounts; acc.r += c.refunds; acc.n += c.net; acc.tp += c.tip; if(c.tip > 0) acc.tc++; if(c.refunds > 0) acc.rc++; if(c.discounts > 0) acc.dc++; return acc; }, { g:0, v:0, d:0, r:0, n:0, tp:0, tc:0, rc:0, dc:0 });
+            document.getElementById('sales-kpi-gross').textContent = salesFormatCurrency(t.g);
+            document.getElementById('sales-kpi-vat').textContent = salesFormatCurrency(t.v);
+            document.getElementById('sales-kpi-discounts').textContent = salesFormatCurrency(t.d);
+            document.getElementById('sales-kpi-refunds').textContent = salesFormatCurrency(t.r);
+            document.getElementById('sales-kpi-tips').textContent = salesFormatCurrency(t.tp);
+            document.getElementById('sales-kpi-net').textContent = salesFormatCurrency(t.n);
+            document.getElementById('sales-kpi-count').textContent = `${data.length} Transactions`;
+            document.getElementById('sales-kpi-discounts-count').textContent = `${t.dc} Applied`;
+            document.getElementById('sales-kpi-refund-count').textContent = t.rc > 0 ? `${t.rc} Refunded` : 'No refunds';
+            document.getElementById('sales-kpi-tips-count').textContent = `${t.tc} Tips`;
+            document.getElementById('sales-avg-transaction-value').textContent = salesFormatCurrency(data.length > 0 ? t.g/data.length : 0).replace('ZAR', '');
+        }
+
+        function salesRenderTransactions() {
+            const tbody = document.getElementById('sales-transactions-table-body');
+            const totalRecords = salesFilteredTransactions.length;
+            const totalPages = Math.ceil(totalRecords / salesRowsPerPage) || 1;
+            const subset = salesFilteredTransactions.slice((salesCurrentPage - 1) * salesRowsPerPage, salesCurrentPage * salesRowsPerPage);
+            document.getElementById('sales-transaction-count-label').textContent = `Showing ${(salesCurrentPage - 1) * salesRowsPerPage + 1} - ${Math.min(salesCurrentPage * salesRowsPerPage, totalRecords)} of ${totalRecords} records`;
+            document.getElementById('sales-page-indicator').textContent = `Page ${salesCurrentPage} of ${totalPages}`;
+            document.getElementById('sales-pagination-controls').classList.toggle('hidden', totalRecords === 0);
+            document.getElementById('sales-prev-page').disabled = salesCurrentPage === 1;
+            document.getElementById('sales-next-page').disabled = salesCurrentPage === totalPages;
+            tbody.innerHTML = subset.map(t => `
+                <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
+                    <td class="px-8 py-5 font-black text-indigo-600 dark:text-indigo-400 tracking-tighter">${t.inv}</td>
+                    <td class="px-8 py-4 dark:text-slate-400 text-xs font-bold uppercase tracking-tight">${t.emp}</td>
+                    <td class="px-8 py-4 text-right font-black dark:text-white">${salesFormatCurrency(t.billTotal)}</td>
+                    <td class="px-8 py-4 text-center">
+                        <button onclick="salesViewInvoice('${t.inv}')" class="p-2 bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 rounded-xl hover:bg-indigo-600 hover:text-white transition-all shadow-sm">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+                        </button>
+                    </td>
+                </tr>`).join('');
+        }
+
+        function salesViewInvoice(inv) {
+            const txn = salesAllTransactions.find(t => t.inv === inv); if (!txn) return;
+            document.getElementById('sales-modal-title').textContent = inv;
+            document.getElementById('sales-modal-subtitle').textContent = `Staff: ${txn.emp} • ${txn.time || 'Time unknown'}`;
+            document.getElementById('sales-modal-paid').textContent = salesFormatCurrency(txn.billTotal);
+            document.getElementById('sales-modal-tax').textContent = salesFormatCurrency(txn.vat);
+            document.getElementById('sales-modal-disc').textContent = salesFormatCurrency(txn.discounts);
+            document.getElementById('sales-modal-tip').textContent = salesFormatCurrency(txn.tip);
+            const items = salesItemizedRecords.filter(r => (r['Invoice Number'] || r['Invoice']) === inv);
+            document.getElementById('sales-modal-items-body').innerHTML = items.length > 0 ? items.map(i => `
+                <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-colors">
+                    <td class="px-6 py-4 font-semibold text-slate-700 dark:text-slate-300 text-xs">${i.Product || 'Unknown'}</td>
+                    <td class="px-6 py-4 text-right font-black text-slate-400 text-xs">${i.Quantity}</td>
+                    <td class="px-6 py-4 text-right font-bold text-slate-600 dark:text-slate-400 text-xs">${salesFormatCurrency(i['Item Price']).replace('ZAR', '')}</td>
+                    <td class="px-6 py-4 text-right font-black text-slate-900 dark:text-white text-xs">${salesFormatCurrency(i['Item Total']).replace('ZAR', '')}</td>
+                </tr>`).join('') : `<tr><td colspan="4" class="px-6 py-12 text-center text-slate-400 font-bold italic tracking-widest uppercase text-[10px]">No itemized data found</td></tr>`;
+            document.getElementById('sales-txn-modal').classList.remove('hidden'); lockScroll();
+        }
+        function salesCloseModal() { document.getElementById('sales-txn-modal').classList.add('hidden'); unlockScroll(); }
+
+        function salesExportToExcel() {
+            if (salesFilteredTransactions.length === 0) return;
+            const ws = XLSX.utils.json_to_sheet(salesFilteredTransactions);
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, "Audit Log");
+            XLSX.writeFile(wb, `Sales_Audit_Log_${new Date().toISOString().split('T')[0]}.xlsx`);
+        }
+
+        function salesExportMatrixToExcel() {
+            if (salesAllTransactions.length === 0) return;
+            const emps = {};
+            salesAllTransactions.forEach(t => { const n = t.emp || 'Unknown'; if (!emps[n]) emps[n] = { c:0, g:0, v:0, r:0, d:0, n:0, tp:0, sur:0 }; emps[n].c++; emps[n].g += t.gross; emps[n].v += t.vat; emps[n].r += t.refunds; emps[n].d += t.discounts; emps[n].n += t.net; emps[n].tp += t.tip; emps[n].sur += (t.surcharges || 0); });
+            const sorted = Object.entries(emps).sort((a,b) => b[1].g - a[1].g);
+            const rows = sorted.map(([name, s]) => ({ 'Employee': name, 'Qty': s.c, 'Gross Sales': parseFloat(s.g.toFixed(2)), 'VAT': parseFloat(s.v.toFixed(2)), 'Surcharges (INCL)': parseFloat(s.sur.toFixed(2)), 'Surcharges (EXCL)': parseFloat((s.sur / 1.15).toFixed(2)), 'Refunds': parseFloat(s.r.toFixed(2)), 'Net Total': parseFloat(s.n.toFixed(2)), 'Tips': parseFloat(s.tp.toFixed(2)) }));
+            const totals = sorted.reduce((acc, [, s]) => { acc.c += s.c; acc.g += s.g; acc.v += s.v; acc.sur += s.sur; acc.r += s.r; acc.n += s.n; acc.tp += s.tp; return acc; }, { c:0, g:0, v:0, sur:0, r:0, n:0, tp:0 });
+            rows.push({ 'Employee': 'TOTAL', 'Qty': totals.c, 'Gross Sales': parseFloat(totals.g.toFixed(2)), 'VAT': parseFloat(totals.v.toFixed(2)), 'Surcharges (INCL)': parseFloat(totals.sur.toFixed(2)), 'Surcharges (EXCL)': parseFloat((totals.sur / 1.15).toFixed(2)), 'Refunds': parseFloat(totals.r.toFixed(2)), 'Net Total': parseFloat(totals.n.toFixed(2)), 'Tips': parseFloat(totals.tp.toFixed(2)) });
+            const ws = XLSX.utils.json_to_sheet(rows); const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, 'Employee Performance');
+            XLSX.writeFile(wb, `Employee_Performance_Matrix_${new Date().toISOString().split('T')[0]}.xlsx`);
+        }
+
+        function salesRenderCharts(data) {
+            const isDark = document.documentElement.classList.contains('dark');
+            const gridColor = isDark ? '#334155' : '#f1f5f9';
+            const labelColor = isDark ? '#94a3b8' : '#64748b';
+            Object.values(salesCharts).forEach(c => { try { c.destroy(); } catch(e){} });
+            const hourly = Array(24).fill(0);
+            data.forEach(t => { if (t.time) { const m = t.time.match(/(\d{1,2}):/); if (m) hourly[parseInt(m[1])] += t.gross; } });
+            salesCharts.hourly = new Chart(document.getElementById('salesHourlyChart'), {
+                type: 'line', data: { labels: hourly.map((_, i) => `${i.toString().padStart(2, '0')}:00`), datasets: [{ data: hourly, borderColor: '#6366f1', borderWidth: 4, pointRadius: 0, fill: true, backgroundColor: 'rgba(99, 102, 241, 0.05)', tension: 0.4 }] },
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { grid: { color: gridColor }, border: { display: false }, ticks: { color: labelColor, font: { size: 10, weight: 'bold' } } }, x: { grid: { display: false }, ticks: { color: labelColor, font: { size: 10, weight: 'bold' } } } } }
+            });
+            const sites = {}; data.forEach(t => { sites[t.site] = (sites[t.site] || 0) + t.gross; });
+            salesCharts.site = new Chart(document.getElementById('salesSiteChart'), {
+                type: 'doughnut', data: { labels: Object.keys(sites), datasets: [{ data: Object.values(sites), backgroundColor: ['#6366f1', '#10b981', '#f59e0b', '#ec4899'], borderWidth: 0, hoverOffset: 10 }] },
+                options: { responsive: true, maintainAspectRatio: false, cutout: '78%', plugins: { legend: { position: 'bottom', labels: { color: labelColor, boxWidth: 10, font: { size: 10, weight: 'bold' } } } } }
+            });
+        }
+
+        function salesRenderPaymentSummary(data) {
+            const summaryBody = document.getElementById('sales-payment-summary-body'); if (!summaryBody) return;
+            const summary = {}; let total = 0;
+            data.forEach(t => { if (t.tenders) { t.tenders.forEach(tender => { const m = tender.method; if (!summary[m]) summary[m] = { c: 0, a: 0 }; summary[m].c++; summary[m].a += tender.amount; total += tender.amount; }); } });
+            summaryBody.innerHTML = Object.entries(summary).sort((a,b) => b[1].a - a[1].a).map(([m, s]) => `
+                <tr class="dark:text-slate-300 transition-colors"><td class="py-5 font-black uppercase tracking-tight text-xs">${m}</td><td class="py-5 text-right font-bold text-slate-500">${s.c}</td><td class="py-5 text-right font-black text-slate-900 dark:text-white">${salesFormatCurrency(s.a)}</td><td class="py-5 text-right"><span class="px-2 py-1 bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 rounded text-[10px] font-black tracking-tighter">${((s.a/total)*100).toFixed(1)}%</span></td></tr>`).join('');
+        }
+
+        function salesRenderEmployeeMatrix(data) {
+            const matrixBody = document.getElementById('sales-employee-matrix-body'); if (!matrixBody) return;
+            const emps = {};
+            data.forEach(t => { const n = t.emp || 'Unknown'; if (!emps[n]) emps[n] = { c:0, g:0, v:0, r:0, d:0, n:0, tp:0, sur:0 }; emps[n].c++; emps[n].g += t.gross; emps[n].v += t.vat; emps[n].r += t.refunds; emps[n].d += t.discounts; emps[n].n += t.net; emps[n].tp += t.tip; emps[n].sur += (t.surcharges || 0); });
+            matrixBody.innerHTML = Object.entries(emps).sort((a,b) => b[1].g - a[1].g).map(([n, s]) => `
+                <tr class="hover:bg-indigo-50/20 dark:hover:bg-indigo-900/10 group transition-colors">
+                    <td class="px-5 py-5"><div class="flex items-center gap-4"><div class="w-8 h-8 rounded-lg bg-slate-100 dark:bg-slate-700 flex items-center justify-center text-slate-400 font-black text-[10px] uppercase">${n.charAt(0)}</div><span class="font-bold text-xs uppercase tracking-tight">${n}</span></div></td>
+                    <td class="px-5 py-5 text-right font-bold text-slate-400 text-xs">${s.c}</td>
+                    <td class="px-5 py-5 text-right font-black text-indigo-500 text-xs">${salesFormatCurrency(s.g).replace('ZAR', '')}</td>
+                    <td class="px-5 py-5 text-right font-bold text-slate-500 text-xs opacity-60">${salesFormatCurrency(s.v).replace('ZAR', '')}</td>
+                    <td class="px-5 py-5 text-right font-bold text-amber-500 text-xs">${salesFormatCurrency(s.sur).replace('ZAR', '')}</td>
+                    <td class="px-5 py-5 text-right font-bold text-amber-600 text-xs">${salesFormatCurrency(s.sur / 1.15).replace('ZAR', '')}</td>
+                    <td class="px-5 py-5 text-right font-bold text-rose-400 text-xs">${s.r > 0 ? salesFormatCurrency(s.r).replace('ZAR', '') : '—'}</td>
+                    <td class="px-5 py-5 text-right font-black text-slate-900 dark:text-white text-xs">${salesFormatCurrency(s.n).replace('ZAR', '')}</td>
+                    <td class="px-5 py-5 text-right font-black text-emerald-500 text-xs">${salesFormatCurrency(s.tp).replace('ZAR', '')}</td>
+                </tr>`).join('');
+        }
+
+        // Sales Pagination
+        document.getElementById('sales-prev-page').addEventListener('click', () => { if (salesCurrentPage > 1) { salesCurrentPage--; salesRenderTransactions(); } });
+        document.getElementById('sales-next-page').addEventListener('click', () => { if (salesCurrentPage < Math.ceil(salesFilteredTransactions.length / salesRowsPerPage)) { salesCurrentPage++; salesRenderTransactions(); } });
+        document.getElementById('sales-rows-per-page').addEventListener('change', (e) => { salesRowsPerPage = parseInt(e.target.value); salesCurrentPage = 1; salesRenderTransactions(); });
+        document.getElementById('sales-transaction-search').addEventListener('input', (e) => {
+            const term = e.target.value.toLowerCase();
+            salesFilteredTransactions = salesAllTransactions.filter(t => String(t.inv).toLowerCase().includes(term) || String(t.emp).toLowerCase().includes(term));
+            salesCurrentPage = 1; salesRenderTransactions();
+        });
+
+        // Initialize sales data
+        salesCheckSharedData();
+
+        // ═══ SALES PDF EXPORT ═══
+        function salesExportToPDF() {
+            if (salesAllTransactions.length === 0) return;
+            const loading = document.getElementById('sales-pdf-loading');
+            loading.style.display = 'flex';
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+            const pw = doc.internal.pageSize.getWidth();
+            const dateStr = new Date().toLocaleDateString('en-ZA');
+            const totalGross = salesAllTransactions.reduce((a, t) => a + t.gross, 0);
+            const totalNet = salesAllTransactions.reduce((a, t) => a + t.net, 0);
+            const totalVat = salesAllTransactions.reduce((a, t) => a + t.vat, 0);
+            const totalExpected = salesAllTransactions.reduce((a, t) => a + t.billTotal, 0);
+            const totalDiscounts = salesAllTransactions.reduce((a, t) => a + t.discounts, 0);
+            const totalTips = salesAllTransactions.reduce((a, t) => a + t.tip, 0);
+            const totalRefunds = salesAllTransactions.reduce((a, t) => a + t.refunds, 0);
+            const totalVoids = salesAllTransactions.reduce((a, t) => a + (t.voids || 0), 0);
+            const totalSurcharges = salesAllTransactions.reduce((a, t) => a + (t.surcharges || 0), 0);
+            const siteName = salesAllTransactions[0]?.site || 'Retail Store';
+            const dateRangeRaw = document.getElementById('sales-report-period').textContent;
+            const dateRange = dateRangeRaw.includes('Period:') ? dateRangeRaw.replace('Period: ', '') : dateRangeRaw;
+
+            doc.setFontSize(24); doc.setFont(undefined, 'bold'); doc.setTextColor(0);
+            doc.text('YOCO', 14, 20);
+            doc.setFontSize(14); doc.setFont(undefined, 'normal'); doc.setTextColor(80);
+            doc.text('End-of-Day Sales Report', 14, 28);
+            doc.setDrawColor(0); doc.setLineWidth(0.6); doc.line(14, 32, pw - 14, 32);
+            doc.setFontSize(11); doc.setFont(undefined, 'bold'); doc.setTextColor(0);
+            doc.text(siteName, 14, 39);
+            doc.setFontSize(9); doc.setFont(undefined, 'normal'); doc.setTextColor(120);
+            doc.text(dateRange, pw - 14, 39, { align: 'right' });
+            doc.text(`Generated: ${dateStr}`, pw - 14, 44, { align: 'right' });
+
+            let y = 50;
+            doc.setDrawColor(200); doc.setLineWidth(0.3); doc.line(14, y, pw - 14, y); y += 7;
+            const kpis = [['GROSS SALES', salesFormatCurrency(totalGross)], ['NET SALES', salesFormatCurrency(totalNet)], ['VAT', salesFormatCurrency(totalVat)], ['TIPS', salesFormatCurrency(totalTips)], ['TRANSACTIONS', String(salesAllTransactions.length)]];
+            const kw = (pw - 28) / kpis.length;
+            kpis.forEach(([label, val], i) => { const x = 14 + i * kw; doc.setFontSize(6); doc.setTextColor(140); doc.setFont(undefined, 'bold'); doc.text(label, x, y); doc.setFontSize(11); doc.setTextColor(0); doc.text(val, x, y + 5); });
+            y += 14;
+
+            doc.setFontSize(13); doc.setTextColor(0); doc.setFont(undefined, 'bold');
+            doc.text('1. Sales Summary', 14, y); y += 3;
+            doc.autoTable({ startY: y, head: [['Description', 'Qty', 'Value']], body: [['Gross Sales', String(salesAllTransactions.length), salesFormatCurrency(totalGross)], ['Total VAT', '-', salesFormatCurrency(totalVat)], ['Discounts', '-', salesFormatCurrency(totalDiscounts)], ['Refunds', '-', salesFormatCurrency(totalRefunds)], ['Voids', '-', salesFormatCurrency(totalVoids)], ['Net Sales', '-', salesFormatCurrency(totalNet)]], theme: 'striped', headStyles: { fillColor: [99, 102, 241], fontSize: 8, fontStyle: 'bold' }, bodyStyles: { fontSize: 8 }, columnStyles: { 0: { fontStyle: 'bold', cellWidth: 90 }, 1: { halign: 'center', cellWidth: 25 }, 2: { halign: 'right' } }, didParseCell: function(data) { if (data.section === 'body' && data.row.index === 5) { data.cell.styles.fontStyle = 'bold'; data.cell.styles.fillColor = [240, 240, 255]; } if (data.section === 'body' && data.column.index === 2 && data.row.index === 3) { data.cell.styles.textColor = [220, 38, 38]; } } });
+
+            y = doc.lastAutoTable.finalY + 10; if (y > 250) { doc.addPage(); y = 20; }
+            doc.setFontSize(13); doc.setTextColor(0); doc.setFont(undefined, 'bold');
+            doc.text('2. Payments Summary', 14, y); y += 3;
+            doc.autoTable({ startY: y, head: [['Description', 'Value (Incl. VAT)']], body: [['Total Payments (Expected)', salesFormatCurrency(totalExpected)], ['Total Payments (Actual)', salesFormatCurrency(totalExpected)], ['Total Over/Under', 'R 0.00'], ['Total Refunds', salesFormatCurrency(totalRefunds)], ['Total Cash Expected', salesFormatCurrency(salesAllTransactions.reduce((a, t) => { let c = 0; if (t.tenders) t.tenders.forEach(tn => { if (tn.method.toLowerCase().includes('cash')) c += tn.amount; }); return a + c; }, 0))], ['Tips', salesFormatCurrency(totalTips)], ['Discounts', salesFormatCurrency(totalDiscounts)], ['Voids', salesFormatCurrency(totalVoids)], ['Surcharges', salesFormatCurrency(totalSurcharges)]], theme: 'striped', headStyles: { fillColor: [30, 41, 59], fontSize: 8, fontStyle: 'bold' }, bodyStyles: { fontSize: 8 }, columnStyles: { 0: { fontStyle: 'bold', cellWidth: 110 }, 1: { halign: 'right' } }, didParseCell: function(data) { if (data.section === 'body' && data.column.index === 1) { if (data.row.index === 3) data.cell.styles.textColor = [220, 38, 38]; if (data.row.index === 6) data.cell.styles.textColor = [217, 119, 6]; } } });
+
+            const tenderSummary = {};
+            salesAllTransactions.forEach(t => { if (t.tenders) t.tenders.forEach(tn => { tenderSummary[tn.method] = (tenderSummary[tn.method] || 0) + tn.amount; }); });
+            const tenderTotal = Object.values(tenderSummary).reduce((a, v) => a + v, 0);
+            y = doc.lastAutoTable.finalY + 10; if (y > 250) { doc.addPage(); y = 20; }
+            doc.setFontSize(13); doc.setTextColor(0); doc.setFont(undefined, 'bold');
+            doc.text('3. Payments by Tender Type', 14, y); y += 3;
+            doc.autoTable({ startY: y, head: [['Method', 'Value', 'Share']], body: Object.entries(tenderSummary).sort((a, b) => b[1] - a[1]).map(([m, v]) => [m.toUpperCase(), salesFormatCurrency(v), ((v / tenderTotal) * 100).toFixed(1) + '%']), theme: 'striped', headStyles: { fillColor: [16, 185, 129], fontSize: 8, fontStyle: 'bold' }, bodyStyles: { fontSize: 8 }, columnStyles: { 0: { fontStyle: 'bold', cellWidth: 80 }, 1: { halign: 'right' }, 2: { halign: 'center', cellWidth: 25 } } });
+
+            const siteSummary = {};
+            salesAllTransactions.forEach(t => { const s = t.site || 'Unknown'; siteSummary[s] = (siteSummary[s] || 0) + t.gross; });
+            y = doc.lastAutoTable.finalY + 10; if (y > 250) { doc.addPage(); y = 20; }
+            doc.setFontSize(13); doc.setTextColor(0); doc.setFont(undefined, 'bold');
+            doc.text('4. Revenue by Site', 14, y); y += 3;
+            doc.autoTable({ startY: y, head: [['Site', 'Gross Revenue', 'Share']], body: Object.entries(siteSummary).sort((a, b) => b[1] - a[1]).map(([s, v]) => [s.toUpperCase(), salesFormatCurrency(v), ((v / totalGross) * 100).toFixed(1) + '%']), theme: 'striped', headStyles: { fillColor: [245, 158, 11], fontSize: 8, fontStyle: 'bold', textColor: [0] }, bodyStyles: { fontSize: 8 }, columnStyles: { 0: { fontStyle: 'bold', cellWidth: 80 }, 1: { halign: 'right' }, 2: { halign: 'center', cellWidth: 25 } } });
+
+            const emps = {};
+            salesAllTransactions.forEach(t => { const n = t.emp || 'Unknown'; if (!emps[n]) emps[n] = { c:0, g:0, v:0, r:0, n:0, tp:0, sur:0 }; emps[n].c++; emps[n].g += t.gross; emps[n].v += t.vat; emps[n].r += t.refunds; emps[n].n += t.net; emps[n].tp += t.tip; emps[n].sur += (t.surcharges || 0); });
+            const sorted = Object.entries(emps).sort((a, b) => b[1].g - a[1].g);
+            y = doc.lastAutoTable.finalY + 10; if (y > 250) { doc.addPage(); y = 20; }
+            doc.setFontSize(13); doc.setTextColor(0); doc.setFont(undefined, 'bold');
+            doc.text('5. Employee Performance Matrix', 14, y); y += 3;
+            const empBody = sorted.map(([name, s]) => [name, String(s.c), salesFormatCurrency(s.g), salesFormatCurrency(s.v), salesFormatCurrency(s.sur), salesFormatCurrency(s.r), salesFormatCurrency(s.n), salesFormatCurrency(s.tp)]);
+            const totRow = sorted.reduce((a, [, s]) => { a.c += s.c; a.g += s.g; a.v += s.v; a.sur += s.sur; a.r += s.r; a.n += s.n; a.tp += s.tp; return a; }, { c:0, g:0, v:0, sur:0, r:0, n:0, tp:0 });
+            empBody.push(['TOTAL', String(totRow.c), salesFormatCurrency(totRow.g), salesFormatCurrency(totRow.v), salesFormatCurrency(totRow.sur), salesFormatCurrency(totRow.r), salesFormatCurrency(totRow.n), salesFormatCurrency(totRow.tp)]);
+            doc.autoTable({ startY: y, head: [['Employee', 'Qty', 'Gross', 'VAT', 'Surcharge', 'Refunds', 'Net', 'Tips']], body: empBody, theme: 'striped', headStyles: { fillColor: [37, 99, 235], fontSize: 7, fontStyle: 'bold' }, bodyStyles: { fontSize: 7 }, columnStyles: { 0: { fontStyle: 'bold' }, 1: { halign: 'center', cellWidth: 12 }, 7: { textColor: [16, 185, 129] } }, didParseCell: function(data) { if (data.section === 'body' && data.row.index === empBody.length - 1) { data.cell.styles.fontStyle = 'bold'; data.cell.styles.fillColor = [230, 235, 255]; } } });
+
+            const totalPages = doc.internal.getNumberOfPages();
+            for (let i = 1; i <= totalPages; i++) { doc.setPage(i); doc.setFontSize(7); doc.setTextColor(150); doc.setFont(undefined, 'normal'); doc.text(`Sales Analytics • End-of-Day Summary • Page ${i} of ${totalPages}`, 14, doc.internal.pageSize.getHeight() - 10); doc.text(`Generated: ${new Date().toLocaleString('en-ZA')}`, pw - 14, doc.internal.pageSize.getHeight() - 10, { align: 'right' }); }
+            doc.save(`End_of_Day_Summary_${siteName.replace(/\s+/g, '_')}_${dateStr.replace(/\//g, '-')}.pdf`);
+            loading.style.display = 'none';
         }
     </script>
 </body>
