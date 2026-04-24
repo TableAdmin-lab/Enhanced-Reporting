@@ -284,6 +284,7 @@
                     <svg id="importIcon" width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/></svg>
                     <span id="importLabel">Import Report</span>
                 </button>
+                <span id="siteNameLabel" style="display:none; background:rgba(0,200,83,0.1); border:1px solid rgba(0,200,83,0.3); color:#00e676; padding:0.4rem 0.8rem; border-radius:0.6rem; font-family:'Inter',sans-serif; font-size:0.65rem; font-weight:800; letter-spacing:0.04em; text-transform:uppercase;"></span>
                 <button onclick="openClearModal()" class="clear-btn" title="Clear All Data">
                     <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
                 </button>
@@ -489,7 +490,7 @@
                         </div>
                     </div>
                     <div class="bg-white dark:bg-slate-800 dark:border dark:border-slate-700 rounded-xl custom-shadow overflow-x-auto border border-slate-200">
-                        <table class="w-full text-left text-sm min-w-[800px]"><thead class="bg-slate-50 dark:bg-slate-800 border-b dark:border-slate-700"><tr><th class="p-4 font-semibold">Invoice</th><th class="p-4 font-semibold sort-header" onclick="sortTable('tips', 'Employee Name')">Employee ↑↓</th><th class="p-4 font-semibold sort-header text-[10px] uppercase" onclick="sortTable('tips', 'Bill Created Time')">Opened ↑↓</th><th class="p-4 font-semibold sort-header text-[10px] uppercase" onclick="sortTable('tips', 'Bill Invoice Time')">Closed ↑↓</th><th class="p-4 font-semibold sort-header" onclick="sortTable('tips', 'Gross Sale Amount')">Sale ↑↓</th><th class="p-4 font-semibold sort-header text-red-500" onclick="sortTable('tips', 'Tip')">Tip ↑↓</th><th class="p-4 font-semibold sort-header" onclick="sortTable('tips', 'Tip Ratio')">Ratio ↑↓</th><th class="p-4 font-semibold">View</th></tr></thead><tbody id="tipsTable"></tbody></table>
+                        <table class="w-full text-left text-sm min-w-[800px]"><thead class="bg-slate-50 dark:bg-slate-800 border-b dark:border-slate-700"><tr><th class="p-4 font-semibold">Invoice</th><th class="p-4 font-semibold">Order #</th><th class="p-4 font-semibold sort-header" onclick="sortTable('tips', 'Employee Name')">Employee ↑↓</th><th class="p-4 font-semibold sort-header text-[10px] uppercase" onclick="sortTable('tips', 'Bill Created Time')">Opened ↑↓</th><th class="p-4 font-semibold sort-header text-[10px] uppercase" onclick="sortTable('tips', 'Bill Invoice Time')">Closed ↑↓</th><th class="p-4 font-semibold sort-header" onclick="sortTable('tips', 'Gross Sale Amount')">Sale ↑↓</th><th class="p-4 font-semibold sort-header text-red-500" onclick="sortTable('tips', 'Tip')">Tip ↑↓</th><th class="p-4 font-semibold sort-header" onclick="sortTable('tips', 'Tip Ratio')">Ratio ↑↓</th><th class="p-4 font-semibold">View</th></tr></thead><tbody id="tipsTable"></tbody></table>
                     </div>
                 </div>
 
@@ -506,7 +507,7 @@
                         </div>
                     </div>
                     <div class="bg-white dark:bg-slate-800 dark:border dark:border-slate-700 rounded-xl custom-shadow overflow-x-auto border border-slate-200">
-                        <table class="w-full text-left text-sm min-w-[800px]"><thead class="bg-slate-50 dark:bg-slate-800 border-b dark:border-slate-700"><tr><th class="p-4 font-semibold">Invoice</th><th class="p-4 font-semibold sort-header" onclick="sortTable('voids', 'Employee Name')">Employee ↑↓</th><th class="p-4 font-semibold sort-header text-[10px] uppercase" onclick="sortTable('voids', 'Bill Created Time')">Opened ↑↓</th><th class="p-4 font-semibold sort-header text-[10px] uppercase" onclick="sortTable('voids', 'Bill Invoice Time')">Closed ↑↓</th><th class="p-4 font-semibold sort-header" onclick="sortTable('voids', 'Gross Sale Amount')">Sale ↑↓</th><th class="p-4 font-semibold sort-header text-red-500" onclick="sortTable('voids', 'Voids Total')">Void ↑↓</th><th class="p-4 font-semibold">View</th></tr></thead><tbody id="voidsTable"></tbody></table>
+                        <table class="w-full text-left text-sm min-w-[800px]"><thead class="bg-slate-50 dark:bg-slate-800 border-b dark:border-slate-700"><tr><th class="p-4 font-semibold">Invoice</th><th class="p-4 font-semibold">Order #</th><th class="p-4 font-semibold sort-header" onclick="sortTable('voids', 'Employee Name')">Employee ↑↓</th><th class="p-4 font-semibold sort-header text-[10px] uppercase" onclick="sortTable('voids', 'Bill Created Time')">Opened ↑↓</th><th class="p-4 font-semibold sort-header text-[10px] uppercase" onclick="sortTable('voids', 'Bill Invoice Time')">Closed ↑↓</th><th class="p-4 font-semibold sort-header" onclick="sortTable('voids', 'Gross Sale Amount')">Sale ↑↓</th><th class="p-4 font-semibold sort-header text-red-500" onclick="sortTable('voids', 'Voids Total')">Void ↑↓</th><th class="p-4 font-semibold">Type</th><th class="p-4 font-semibold">View</th></tr></thead><tbody id="voidsTable"></tbody></table>
                     </div>
                 </div>
 
@@ -523,7 +524,7 @@
                         </div>
                     </div>
                     <div class="bg-white dark:bg-slate-800 dark:border dark:border-slate-700 rounded-xl custom-shadow overflow-x-auto border border-slate-200">
-                        <table class="w-full text-left text-sm min-w-[800px]"><thead class="bg-slate-50 dark:bg-slate-800 border-b dark:border-slate-700"><tr><th class="p-4 font-semibold">Invoice</th><th class="p-4 font-semibold sort-header" onclick="sortTable('parking', 'Employee Name')">Employee ↑↓</th><th class="p-4 font-semibold sort-header text-[10px] uppercase" onclick="sortTable('parking', 'Bill Created Time')">Opened ↑↓</th><th class="p-4 font-semibold sort-header text-[10px] uppercase" onclick="sortTable('parking', 'Bill Invoice Time')">Closed ↑↓</th><th class="p-4 font-semibold sort-header" onclick="sortTable('parking', 'Bill Duration (minutes)')">Duration ↑↓</th><th class="p-4 font-semibold sort-header" onclick="sortTable('parking', 'Gross Sale Amount')">Sale ↑↓</th><th class="p-4 font-semibold">View</th></tr></thead><tbody id="parkingTable"></tbody></table>
+                        <table class="w-full text-left text-sm min-w-[800px]"><thead class="bg-slate-50 dark:bg-slate-800 border-b dark:border-slate-700"><tr><th class="p-4 font-semibold">Invoice</th><th class="p-4 font-semibold">Order #</th><th class="p-4 font-semibold sort-header" onclick="sortTable('parking', 'Employee Name')">Employee ↑↓</th><th class="p-4 font-semibold sort-header text-[10px] uppercase" onclick="sortTable('parking', 'Bill Created Time')">Opened ↑↓</th><th class="p-4 font-semibold sort-header text-[10px] uppercase" onclick="sortTable('parking', 'Bill Invoice Time')">Closed ↑↓</th><th class="p-4 font-semibold sort-header" onclick="sortTable('parking', 'Bill Duration (minutes)')">Duration ↑↓</th><th class="p-4 font-semibold sort-header" onclick="sortTable('parking', 'Gross Sale Amount')">Sale ↑↓</th><th class="p-4 font-semibold">View</th></tr></thead><tbody id="parkingTable"></tbody></table>
                     </div>
                 </div>
             </div>
@@ -560,7 +561,7 @@
                     <button onclick="closeModal()" class="text-slate-400 hover:text-slate-600 text-xl">✕</button>
                 </div>
                 <div id="modalBody" class="p-6 overflow-y-auto space-y-6">
-                    <div id="modalSummary" class="grid grid-cols-3 gap-4 bg-slate-50 dark:bg-slate-800/30 p-4 rounded-xl border dark:border-slate-700 text-slate-900 dark:text-slate-100"></div>
+                    <div id="modalSummary" class="grid grid-cols-4 gap-4 bg-slate-50 dark:bg-slate-800/30 p-4 rounded-xl border dark:border-slate-700 text-slate-900 dark:text-slate-100"></div>
                     <div>
                         <h4 class="font-bold mb-3 text-xs uppercase tracking-widest text-slate-400">Order Items</h4>
                         <table class="w-full text-left text-xs"><thead class="border-b dark:border-slate-700 text-slate-400"><tr><th class="pb-2 font-semibold text-slate-900 dark:text-slate-100">Product</th><th class="pb-2 font-semibold text-center text-slate-900 dark:text-slate-100">Qty</th><th class="pb-2 font-semibold text-right text-slate-900 dark:text-slate-100">Total</th></tr></thead><tbody id="modalItemsTable" class="text-slate-900 dark:text-slate-100"></tbody></table>
@@ -606,33 +607,38 @@
             </header>
 
             <!-- KPI Grid -->
-            <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-10">
-                <div class="p-5 bg-white dark:bg-darkCard border border-slate-100 dark:border-darkBorder shadow-sm rounded-xl">
+            <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-7 gap-4 mb-10">
+                <div class="p-5 bg-gradient-to-br from-white to-indigo-50/50 dark:from-darkCard dark:to-indigo-900/10 border border-indigo-100 dark:border-indigo-500/20 shadow-sm rounded-xl">
                     <div class="flex justify-between items-start mb-2"><p class="stat-label">Gross Sales</p><span class="info-btn" onclick="salesShowInfo('gross')">ⓘ</span></div>
-                    <p class="stat-value" id="sales-kpi-gross">R 0.00</p>
+                    <p class="stat-value text-indigo-600 dark:text-indigo-400" id="sales-kpi-gross">R 0.00</p>
                     <p class="text-[10px] font-bold text-slate-400 mt-1" id="sales-kpi-count">0 Transactions</p>
                 </div>
                 <div class="p-5 bg-white dark:bg-darkCard border border-slate-100 dark:border-darkBorder shadow-sm rounded-xl">
                     <div class="flex justify-between items-start mb-2"><p class="stat-label">Total VAT</p><span class="info-btn" onclick="salesShowInfo('vat')">ⓘ</span></div>
-                    <p class="stat-value text-indigo-500" id="sales-kpi-vat">R 0.00</p>
+                    <p class="stat-value text-slate-900 dark:text-white" id="sales-kpi-vat">R 0.00</p>
                     <p class="text-[10px] font-bold text-slate-400 mt-1 uppercase tracking-tighter">Tax Component</p>
                 </div>
-                <div class="p-5 bg-white dark:bg-darkCard border border-slate-100 dark:border-darkBorder shadow-sm rounded-xl">
+                <div class="p-5 bg-gradient-to-br from-white to-orange-50/50 dark:from-darkCard dark:to-orange-900/10 border border-orange-100 dark:border-orange-500/20 shadow-sm rounded-xl">
                     <div class="flex justify-between items-start mb-2"><p class="stat-label">Discounts</p><span class="info-btn" onclick="salesShowInfo('discounts')">ⓘ</span></div>
                     <p class="stat-value text-orange-500" id="sales-kpi-discounts">R 0.00</p>
                     <p class="text-[10px] font-bold text-slate-400 mt-1" id="sales-kpi-discounts-count">0 Applied</p>
                 </div>
-                <div class="p-5 bg-white dark:bg-darkCard border border-slate-100 dark:border-darkBorder shadow-sm rounded-xl">
+                <div class="p-5 bg-gradient-to-br from-white to-rose-50/50 dark:from-darkCard dark:to-rose-900/10 border border-rose-100 dark:border-rose-500/20 shadow-sm rounded-xl">
                     <div class="flex justify-between items-start mb-2"><p class="stat-label">Refunds</p><span class="info-btn" onclick="salesShowInfo('refunds')">ⓘ</span></div>
                     <p class="stat-value text-rose-500" id="sales-kpi-refunds">R 0.00</p>
                     <p class="text-[10px] font-bold text-slate-400 mt-1" id="sales-kpi-refund-count">No refunds</p>
                 </div>
-                <div class="p-5 bg-white dark:bg-darkCard border border-slate-100 dark:border-darkBorder shadow-sm rounded-xl">
+                <div class="p-5 bg-gradient-to-br from-white to-red-50/50 dark:from-darkCard dark:to-red-900/10 border border-red-100 dark:border-red-500/20 shadow-sm rounded-xl">
+                    <div class="flex justify-between items-start mb-2"><p class="stat-label">Voids Total</p><span class="info-btn" onclick="salesShowInfo('voids')">ⓘ</span></div>
+                    <p class="stat-value text-red-500" id="sales-kpi-voids">R 0.00</p>
+                    <p class="text-[10px] font-bold text-slate-400 mt-1" id="sales-kpi-voids-count">0 Detected</p>
+                </div>
+                <div class="p-5 bg-gradient-to-br from-white to-emerald-50/50 dark:from-darkCard dark:to-emerald-900/10 border border-emerald-100 dark:border-emerald-500/20 shadow-sm rounded-xl">
                     <div class="flex justify-between items-start mb-2"><p class="stat-label">Total Tips</p><span class="info-btn" onclick="salesShowInfo('tips')">ⓘ</span></div>
                     <p class="stat-value text-emerald-500" id="sales-kpi-tips">R 0.00</p>
                     <p class="text-[10px] font-bold text-slate-400 mt-1" id="sales-kpi-tips-count">0 Tips</p>
                 </div>
-                <div class="p-5 bg-white dark:bg-darkCard border border-slate-100 dark:border-darkBorder shadow-sm rounded-xl">
+                <div class="p-5 bg-gradient-to-br from-white to-slate-50 dark:from-darkCard dark:to-slate-800 border border-slate-200 dark:border-slate-700 shadow-sm rounded-xl">
                     <div class="flex justify-between items-start mb-2"><p class="stat-label">Net Sales</p><span class="info-btn" onclick="salesShowInfo('net')">ⓘ</span></div>
                     <p class="stat-value text-slate-900 dark:text-white" id="sales-kpi-net">R 0.00</p>
                     <p class="text-[10px] font-bold text-slate-400 mt-1 uppercase tracking-tighter">Final Trading</p>
@@ -685,10 +691,17 @@
                 </div>
             </div>
 
+            <!-- Sales Reports Tabs -->
+            <div class="flex border-b border-slate-200 dark:border-darkBorder mb-8 gap-8 overflow-x-auto no-scrollbar">
+                <button onclick="salesSwitchTab('matrix')" id="sales-tab-matrix" class="pb-4 px-1 text-xs font-black uppercase tracking-[0.2em] border-b-2 border-indigo-500 text-indigo-600 dark:text-indigo-400 transition-all">Employee Matrix</button>
+                <button onclick="salesSwitchTab('audit')" id="sales-tab-audit" class="pb-4 px-1 text-xs font-black uppercase tracking-[0.2em] text-slate-400 hover:text-indigo-500 transition-all border-b-2 border-transparent">Audit Log</button>
+                <button onclick="salesSwitchTab('open')" id="sales-tab-open" class="pb-4 px-1 text-xs font-black uppercase tracking-[0.2em] text-slate-400 hover:text-indigo-500 transition-all border-b-2 border-transparent hidden">⚠ Open Tables</button>
+            </div>
+
             <!-- Employee Matrix -->
-            <div class="mb-10 overflow-hidden bg-white dark:bg-darkCard shadow-sm border border-slate-100 dark:border-darkBorder rounded-xl">
+            <div id="sales-section-matrix" class="sales-tab-section mb-10 overflow-hidden bg-white dark:bg-darkCard shadow-sm border border-slate-100 dark:border-darkBorder rounded-xl">
                 <div class="p-8 border-b dark:border-darkBorder flex justify-between items-center bg-slate-50/50 dark:bg-slate-800/30">
-                    <div><h2 class="text-xl font-black text-slate-900 dark:text-white uppercase tracking-tighter">Employee Performance Matrix</h2><p class="text-slate-400 text-xs font-medium">Revenue contribution audit by staff member</p></div>
+                    <div><h2 class="text-xl font-black text-slate-900 dark:text-white uppercase tracking-tighter">Employee Performance Matrix</h2><p class="text-slate-400 text-xs font-medium" id="sales-matrix-count-label">Revenue contribution audit by staff member</p></div>
                     <div class="flex items-center gap-3">
                         <button onclick="salesExportMatrixToExcel()" class="flex items-center gap-2 p-2.5 px-4 bg-emerald-50 text-emerald-700 dark:bg-emerald-900/20 dark:text-emerald-400 rounded-xl transition-all font-bold text-[10px] tracking-widest uppercase hover:bg-emerald-600 hover:text-white shadow-sm">
                             <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zM6 20V4h7v5h5v11H6z"/></svg>
@@ -704,19 +717,64 @@
                             <th class="px-5 py-5 font-black uppercase text-[10px] tracking-widest text-right">Qty</th>
                             <th class="px-5 py-5 font-black uppercase text-[10px] tracking-widest text-right text-indigo-500">Gross</th>
                             <th class="px-5 py-5 font-black uppercase text-[10px] tracking-widest text-right">VAT</th>
-                            <th class="px-5 py-5 font-black uppercase text-[10px] tracking-widest text-right text-amber-500">Surch. (INCL)</th>
-                            <th class="px-5 py-5 font-black uppercase text-[10px] tracking-widest text-right text-amber-600">Surch. (EXCL)</th>
+                            <th class="px-5 py-5 font-black uppercase text-[10px] tracking-widest text-right text-amber-500">Surch.</th>
                             <th class="px-5 py-5 font-black uppercase text-[10px] tracking-widest text-right text-rose-500">Refunds</th>
+                            <th class="px-5 py-5 font-black uppercase text-[10px] tracking-widest text-right text-red-500">Voids</th>
                             <th class="px-5 py-5 font-black uppercase text-[10px] tracking-widest text-right text-slate-900 dark:text-white">Net Total</th>
                             <th class="px-5 py-5 font-black uppercase text-[10px] tracking-widest text-right text-emerald-500">Tips</th>
                         </tr></thead>
                         <tbody id="sales-employee-matrix-body" class="divide-y dark:divide-darkBorder"></tbody>
                     </table>
                 </div>
+                <div id="sales-matrix-pagination" class="p-6 bg-slate-50/50 dark:bg-slate-800/20 border-t dark:border-darkBorder flex justify-between items-center hidden">
+                <div class="flex items-center gap-3">
+                    <span class="text-[10px] font-black uppercase text-slate-400 tracking-widest">Rows:</span>
+                    <select id="sales-matrix-rows-per-page" class="bg-white dark:bg-slate-800 border dark:border-darkBorder rounded-lg px-2 py-1.5 text-xs font-bold focus:ring-2 focus:ring-indigo-500 shadow-sm outline-none">
+                        <option value="10" selected>10</option><option value="25">25</option><option value="50">50</option><option value="100">100</option>
+                    </select>
+                </div>
+                <div class="flex items-center gap-4">
+                    <button id="sales-matrix-prev" class="p-2 border dark:border-darkBorder rounded-xl hover:bg-white dark:hover:bg-slate-700 transition-all shadow-sm"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg></button>
+                    <span id="sales-matrix-page-indicator" class="text-xs font-black text-slate-500 uppercase">Page 1 of 1</span>
+                    <button id="sales-matrix-next" class="p-2 border dark:border-darkBorder rounded-xl hover:bg-white dark:hover:bg-slate-700 transition-all shadow-sm"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg></button>
+                </div>
             </div>
+        </div>
+
+        <!-- Open Tables Section -->
+        <div id="sales-section-open" class="sales-tab-section mb-10 overflow-hidden bg-white dark:bg-darkCard shadow-sm border border-amber-200 dark:border-amber-500/30 rounded-xl hidden">
+            <div class="p-8 border-b dark:border-darkBorder flex justify-between items-center bg-amber-50/50 dark:bg-amber-900/10">
+                <div>
+                    <h2 class="text-xl font-black text-amber-700 dark:text-amber-400 uppercase tracking-tighter">⚠ Open Tables (Outstanding Payments)</h2>
+                    <p class="text-slate-400 text-xs font-medium mt-1" id="sales-open-tables-count-label">Tables without completed payment</p>
+                </div>
+                <span class="info-btn" onclick="salesShowInfo('opentables')">ⓘ</span>
+            </div>
+            <div class="overflow-x-auto">
+                <table class="w-full text-left text-sm whitespace-nowrap">
+                    <thead class="bg-slate-50/50 dark:bg-slate-800/30 text-slate-400 uppercase text-[10px] font-black tracking-widest">
+                        <tr><th class="px-6 py-5">Order #</th><th class="px-6 py-4">Invoice</th><th class="px-6 py-4">Employee</th><th class="px-6 py-4 text-right">Gross</th><th class="px-6 py-4 text-right">Tip</th><th class="px-6 py-4 text-right">Bill Total</th><th class="px-6 py-4 text-center">View</th></tr>
+                    </thead>
+                    <tbody id="sales-open-tables-body" class="divide-y dark:divide-darkBorder"></tbody>
+                </table>
+            </div>
+            <div id="sales-open-tables-pagination" class="p-6 bg-slate-50/50 dark:bg-slate-800/20 border-t dark:border-darkBorder flex justify-between items-center hidden">
+                <div class="flex items-center gap-3">
+                    <span class="text-[10px] font-black uppercase text-slate-400 tracking-widest">Rows:</span>
+                    <select id="sales-open-tables-rows" class="bg-white dark:bg-slate-800 border dark:border-darkBorder rounded-lg px-2 py-1.5 text-xs font-bold focus:ring-2 focus:ring-indigo-500 shadow-sm outline-none">
+                        <option value="10" selected>10</option><option value="25">25</option><option value="50">50</option><option value="100">100</option>
+                    </select>
+                </div>
+                <div class="flex items-center gap-4">
+                    <button id="sales-open-tables-prev" class="p-2 border dark:border-darkBorder rounded-xl hover:bg-white dark:hover:bg-slate-700 transition-all shadow-sm"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg></button>
+                    <span id="sales-open-tables-page-indicator" class="text-xs font-black text-slate-500 uppercase">Page 1 of 1</span>
+                    <button id="sales-open-tables-next" class="p-2 border dark:border-darkBorder rounded-xl hover:bg-white dark:hover:bg-slate-700 transition-all shadow-sm"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg></button>
+                </div>
+            </div>
+        </div>
 
             <!-- Audit Log -->
-            <div class="mb-10 overflow-hidden bg-white dark:bg-darkCard shadow-sm border border-slate-100 dark:border-darkBorder rounded-xl">
+            <div id="sales-section-audit" class="sales-tab-section mb-10 overflow-hidden bg-white dark:bg-darkCard shadow-sm border border-slate-100 dark:border-darkBorder rounded-xl hidden">
                 <div class="p-8 border-b dark:border-darkBorder flex flex-col md:flex-row justify-between gap-6">
                     <div class="flex items-center gap-4">
                         <div><h2 class="text-xl font-black text-slate-900 dark:text-white uppercase tracking-tighter">Transaction Audit Log</h2><p class="text-xs text-slate-400 font-medium mt-1" id="sales-transaction-count-label">Waiting for records...</p></div>
@@ -736,7 +794,7 @@
                 <div class="overflow-x-auto">
                     <table class="w-full text-left text-sm">
                         <thead class="bg-slate-50/50 dark:bg-slate-800/30 text-slate-400 uppercase text-[10px] font-black tracking-widest">
-                            <tr><th class="px-8 py-5">Invoice</th><th class="px-8 py-4">Employee</th><th class="px-8 py-4 text-right">Paid (R)</th><th class="px-8 py-4 text-center">Actions</th></tr>
+                            <tr><th class="px-8 py-5">Invoice</th><th class="px-8 py-4">Order #</th><th class="px-8 py-4">Employee</th><th class="px-8 py-4 text-right">Paid (R)</th><th class="px-8 py-4 text-center">Actions</th></tr>
                         </thead>
                         <tbody id="sales-transactions-table-body" class="divide-y dark:divide-darkBorder"></tbody>
                     </table>
@@ -766,11 +824,15 @@
                     <button onclick="salesCloseModal()" class="p-3 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-2xl transition-all text-slate-400"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M6 18L18 6M6 6l12 12"/></svg></button>
                 </div>
                 <div class="p-8 overflow-y-auto space-y-8">
-                    <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
-                        <div class="p-4 rounded-2xl bg-indigo-50/50 dark:bg-indigo-900/20 border border-indigo-100 dark:border-indigo-500/20"><p class="text-[10px] uppercase font-black text-indigo-400 mb-1">Paid</p><p class="text-xl font-black text-indigo-700 dark:text-indigo-400" id="sales-modal-paid">R 0.00</p></div>
-                        <div class="p-4 rounded-2xl bg-amber-50/50 dark:bg-amber-900/20 border border-amber-100 dark:border-amber-500/20"><p class="text-[10px] uppercase font-black text-amber-500 mb-1">VAT</p><p class="text-xl font-black text-amber-700 dark:text-amber-500" id="sales-modal-tax">R 0.00</p></div>
-                        <div class="p-4 rounded-2xl bg-orange-50/50 dark:bg-orange-900/20 border border-orange-100 dark:border-orange-500/20"><p class="text-[10px] uppercase font-black text-orange-500 mb-1">Discount</p><p class="text-xl font-black text-orange-700 dark:text-orange-500" id="sales-modal-disc">R 0.00</p></div>
-                        <div class="p-4 rounded-2xl bg-emerald-50/50 dark:bg-emerald-900/20 border border-emerald-100 dark:border-emerald-500/20"><p class="text-[10px] uppercase font-black text-emerald-500 mb-1">Tip</p><p class="text-xl font-black text-emerald-700 dark:text-emerald-500" id="sales-modal-tip">R 0.00</p></div>
+                    <div class="grid grid-cols-2 sm:grid-cols-3 gap-4">
+                        <div class="p-4 rounded-2xl bg-slate-100/80 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-600/30"><p class="text-[10px] uppercase font-black text-slate-500 mb-1">Bill Total</p><p class="text-2xl font-black text-slate-900 dark:text-white" id="sales-modal-bill-total">R 0.00</p></div>
+                        <div class="p-4 rounded-2xl bg-indigo-50/50 dark:bg-indigo-900/20 border border-indigo-100 dark:border-indigo-500/20"><p class="text-[10px] uppercase font-black text-indigo-400 mb-1">Sales Total</p><p class="text-xl font-black text-indigo-700 dark:text-indigo-400" id="sales-modal-paid">R 0.00</p></div>
+                        <div class="p-4 rounded-2xl bg-emerald-50/50 dark:bg-emerald-900/20 border border-emerald-100 dark:border-emerald-500/20"><p class="text-[10px] uppercase font-black text-emerald-500 mb-1">Tip Total</p><p class="text-xl font-black text-emerald-700 dark:text-emerald-500" id="sales-modal-tip">R 0.00</p></div>
+                    </div>
+                    <div class="grid grid-cols-3 gap-4">
+                        <div class="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/30 border dark:border-darkBorder"><p class="text-[9px] uppercase font-black text-slate-400 mb-0.5">Order #</p><p class="text-xs font-mono font-black text-slate-700 dark:text-slate-300" id="sales-modal-order-num">—</p></div>
+                        <div class="p-3 rounded-xl bg-amber-50/50 dark:bg-amber-900/20 border border-amber-100 dark:border-amber-500/20"><p class="text-[9px] uppercase font-black text-amber-500 mb-0.5">VAT</p><p class="text-xs font-black text-amber-700 dark:text-amber-500" id="sales-modal-tax">R 0.00</p></div>
+                        <div class="p-3 rounded-xl bg-orange-50/50 dark:bg-orange-900/20 border border-orange-100 dark:border-orange-500/20"><p class="text-[9px] uppercase font-black text-orange-500 mb-0.5">Discount</p><p class="text-xs font-black text-orange-700 dark:text-orange-500" id="sales-modal-disc">R 0.00</p></div>
                     </div>
                     <div>
                         <h4 class="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 mb-4">Itemized Sale</h4>
@@ -883,6 +945,7 @@
             const label = document.getElementById('importLabel');
             const icon = document.getElementById('importIcon');
             const data = localStorage.getItem('yoco_portal_data');
+            const siteLabel = document.getElementById('siteNameLabel');
             if (data) {
                 try {
                     const parsed = JSON.parse(data);
@@ -891,11 +954,21 @@
                     label.textContent = '✓ ' + short;
                     btn.classList.add('loaded');
                     icon.innerHTML = '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>';
+                    // Extract site names
+                    const sites = new Set();
+                    if (parsed.sales && parsed.sales.length) {
+                        parsed.sales.forEach(r => { const s = r['Site'] || r['site']; if (s && s.trim()) sites.add(s.trim()); });
+                    }
+                    if (sites.size > 0) {
+                        siteLabel.textContent = [...sites].join(', ');
+                        siteLabel.style.display = 'inline-block';
+                    } else { siteLabel.style.display = 'none'; }
                 } catch(e) {}
             } else {
                 label.textContent = 'Import Report';
                 btn.classList.remove('loaded');
                 icon.innerHTML = '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/>';
+                siteLabel.style.display = 'none';
             }
         }
 
@@ -1067,7 +1140,16 @@
             return h > 0 ? `${h}h ${m}m` : `${m}m`;
         }
 
-        const getTimeOnly = (ts) => ts && ts.includes(' - ') ? ts.split(' - ')[1] : (ts || "N/A");
+        const getTimeOnly = (ts) => {
+            if (!ts) return 'N/A';
+            if (ts.includes(' - ')) { const parts = ts.split(' - '); return parts[0] + ' ' + parts[1]; }
+            return ts;
+        };
+        const getDateTimeCell = (ts) => {
+            if (!ts) return 'N/A';
+            if (ts.includes(' - ')) { const parts = ts.split(' - '); return `<div class="text-[10px] text-slate-500 leading-tight"><div class="font-semibold">${parts[0]}</div><div>${parts[1]}</div></div>`; }
+            return ts;
+        };
 
         function checkSharedData() {
             const shared = localStorage.getItem('yoco_portal_data');
@@ -1176,9 +1258,19 @@
             table.innerHTML = '';
             sorted.forEach(r => {
                 const row = document.createElement('tr'); row.className = 'border-b dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800/50 text-slate-900 dark:text-slate-100';
-                let cells = `<td class="p-4 font-mono text-xs text-blue-500">${r['Invoice Number']}</td><td class="p-4">${r['Employee Name']}</td><td class="p-4 text-[10px] text-slate-500 leading-tight">${getTimeOnly(r['Bill Created Time'])}</td><td class="p-4 text-[10px] text-slate-500 leading-tight">${getTimeOnly(r['Bill Invoice Time'])}</td>`;
+                const orderNum = r['Order Number'] || r['Order'] || '—';
+                let cells = `<td class="p-4 font-mono text-xs text-blue-500">${r['Invoice Number']}</td><td class="p-4 font-mono text-xs text-slate-400">${orderNum}</td><td class="p-4">${r['Employee Name']}</td><td class="p-4">${getDateTimeCell(r['Bill Created Time'])}</td><td class="p-4">${getDateTimeCell(r['Bill Invoice Time'])}</td>`;
                 if (type === 'tips') cells += `<td class="p-4">${fmt.format(r['Gross Sale Amount'])}</td><td class="p-4 text-red-500 font-bold">${fmt.format(r['Tip'])}</td><td class="p-4"><span class="bg-red-500/10 text-red-500 px-2 py-0.5 rounded text-[10px] font-bold">${(parseFloat(r['Tip Ratio'])*100).toFixed(1)}%</span></td>`;
-                if (type === 'voids') cells += `<td class="p-4">${fmt.format(r['Gross Sale Amount'])}</td><td class="p-4 text-red-500 font-bold">${fmt.format(r['Voids Total'])}</td>`;
+                if (type === 'voids') {
+                    cells += `<td class="p-4">${fmt.format(r['Gross Sale Amount'])}</td><td class="p-4 text-red-500 font-bold">${fmt.format(r['Voids Total'])}</td>`;
+                    const invItems = rawItems.filter(i => i['Invoice Number'] === r['Invoice Number']);
+                    const scrapped = invItems.filter(i => (i['Status']||'').toLowerCase().includes('scrap')).length;
+                    const returned = invItems.filter(i => (i['Status']||'').toLowerCase().includes('return') || (i['Status']||'').toLowerCase().includes('void')).length;
+                    let typeBadges = '';
+                    if (scrapped > 0) typeBadges += `<span class="bg-orange-100 dark:bg-orange-900/30 text-orange-600 dark:text-orange-400 px-2 py-0.5 rounded text-[9px] font-bold mr-1">${scrapped} Scrapped</span>`;
+                    if (returned > 0) typeBadges += `<span class="bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400 px-2 py-0.5 rounded text-[9px] font-bold">${returned} Returned</span>`;
+                    cells += `<td class="p-4">${typeBadges || '—'}</td>`;
+                }
                 if (type === 'parking') cells += `<td class="p-4 font-bold text-orange-500">${formatDuration(r['Bill Duration (minutes)'])}</td><td class="p-4">${fmt.format(r['Gross Sale Amount'])}</td>`;
                 cells += `<td class="p-4 text-center"><button onclick="viewInvoice('${r['Invoice Number']}')" class="text-slate-400 hover:text-blue-500 transition-colors">👁</button></td>`;
                 row.innerHTML = cells; table.appendChild(row);
@@ -1191,17 +1283,22 @@
             let summaryData = [], detailData = [];
             if (type === 'tips') {
                 const invoices = rawSales.filter(r => (parseFloat(r['Tip Ratio']) || 0) > 0.25);
-                summaryData = invoices.map(r => ({ Invoice: r['Invoice Number'], Employee: r['Employee Name'], Opened: r['Bill Created Time'], Closed: r['Bill Invoice Time'], 'Sale Amt': r['Gross Sale Amount'], Tip: r['Tip'], 'Ratio %': (parseFloat(r['Tip Ratio'])*100).toFixed(2) }));
+                summaryData = invoices.map(r => ({ Invoice: r['Invoice Number'], 'Order #': r['Order Number'] || r['Order'] || '', Employee: r['Employee Name'], Opened: r['Bill Created Time'], Closed: r['Bill Invoice Time'], 'Sale Amt': r['Gross Sale Amount'], Tip: r['Tip'], 'Ratio %': (parseFloat(r['Tip Ratio'])*100).toFixed(2) }));
                 const ids = invoices.map(r => r['Invoice Number']);
                 detailData = rawItems.filter(i => ids.includes(i['Invoice Number'])).map(i => ({ Invoice: i['Invoice Number'], Product: i['Product'], Qty: i['Quantity'], Price: i['Item Price'], Total: i['Item Total'], Status: i['Status'], Employee: i['Employee Name'] }));
             } else if (type === 'voids') {
                 const invoices = rawSales.filter(r => (parseFloat(r['Voids Total']) || 0) > 0);
-                summaryData = invoices.map(r => ({ Invoice: r['Invoice Number'], Employee: r['Employee Name'], Opened: r['Bill Created Time'], Closed: r['Bill Invoice Time'], 'Sale Total': r['Gross Sale Amount'], 'Void Value': r['Voids Total'] }));
+                summaryData = invoices.map(r => {
+                    const invItems = rawItems.filter(i => i['Invoice Number'] === r['Invoice Number']);
+                    const scrapped = invItems.filter(i => (i['Status']||'').toLowerCase().includes('scrap')).length;
+                    const returned = invItems.filter(i => (i['Status']||'').toLowerCase().includes('return') || (i['Status']||'').toLowerCase().includes('void')).length;
+                    return { Invoice: r['Invoice Number'], 'Order #': r['Order Number'] || r['Order'] || '', Employee: r['Employee Name'], Opened: r['Bill Created Time'], Closed: r['Bill Invoice Time'], 'Sale Total': r['Gross Sale Amount'], 'Void Value': r['Voids Total'], Scrapped: scrapped, Returned: returned };
+                });
                 const ids = invoices.map(r => r['Invoice Number']);
                 detailData = rawItems.filter(i => ids.includes(i['Invoice Number'])).map(i => ({ Invoice: i['Invoice Number'], Product: i['Product'], Qty: i['Quantity'], Price: i['Item Price'], Total: i['Item Total'], Status: i['Status'] || 'Served', Employee: i['Employee Name'] }));
             } else if (type === 'parking') {
                 const invoices = rawSales.filter(r => (parseInt(r['Bill Duration (minutes)']) || 0) > 180);
-                summaryData = invoices.map(r => ({ Invoice: r['Invoice Number'], Employee: r['Employee Name'], Opened: r['Bill Created Time'], Closed: r['Bill Invoice Time'], Duration: formatDuration(r['Bill Duration (minutes)']), 'Sale Amt': r['Gross Sale Amount'] }));
+                summaryData = invoices.map(r => ({ Invoice: r['Invoice Number'], 'Order #': r['Order Number'] || r['Order'] || '', Employee: r['Employee Name'], Opened: r['Bill Created Time'], Closed: r['Bill Invoice Time'], Duration: formatDuration(r['Bill Duration (minutes)']), 'Sale Amt': r['Gross Sale Amount'] }));
                 const ids = invoices.map(r => r['Invoice Number']);
                 detailData = rawItems.filter(i => ids.includes(i['Invoice Number'])).map(i => ({ Invoice: i['Invoice Number'], Product: i['Product'], Qty: i['Quantity'], Price: i['Item Price'], Total: i['Item Total'], Status: i['Status'], Employee: i['Employee Name'] }));
             }
@@ -1231,22 +1328,34 @@
 
         function viewInvoice(id) {
             const s = rawSales.find(x => x['Invoice Number'] === id); if (!s) return;
+            const orderNum = s['Order Number'] || s['Order'] || '—';
+            const grossAmt = parseFloat(s['Gross Sale Amount']) || 0;
+            const tipAmt = parseFloat(s['Tip']) || 0;
+            const billTotal = grossAmt + tipAmt;
             document.getElementById('modalInvoiceId').innerText = id; document.getElementById('modalEmployee').innerText = s['Employee Name'];
             document.getElementById('modalSummary').innerHTML = `
-                <div><p class="text-[10px] text-slate-400 uppercase font-bold">Total</p><p class="font-bold text-slate-900 dark:text-slate-100">${fmt.format(s['Gross Sale Amount'])}</p></div>
-                <div><p class="text-[10px] text-slate-400 uppercase font-bold">Tip</p><p class="font-bold text-blue-500">${fmt.format(s['Tip'])}</p></div>
+                <div><p class="text-[10px] text-slate-400 uppercase font-bold">Bill Total</p><p class="font-black text-lg text-slate-900 dark:text-slate-100">${fmt.format(billTotal)}</p></div>
+                <div><p class="text-[10px] text-slate-400 uppercase font-bold">Sales Total</p><p class="font-bold text-slate-900 dark:text-slate-100">${fmt.format(grossAmt)}</p></div>
+                <div><p class="text-[10px] text-slate-400 uppercase font-bold">Tip Total</p><p class="font-bold text-blue-500">${fmt.format(tipAmt)}</p></div>
                 <div><p class="text-[10px] text-slate-400 uppercase font-bold text-red-500">Void</p><p class="font-bold text-red-500">${fmt.format(s['Voids Total'])}</p></div>
-                <div class="col-span-3 pt-2 border-t dark:border-slate-700 flex justify-between">
+                <div class="col-span-4 pt-2 border-t dark:border-slate-700 grid grid-cols-3 gap-2">
+                    <div><p class="text-[8px] text-slate-400 uppercase">Order #</p><p class="text-xs font-mono">${orderNum}</p></div>
                     <div><p class="text-[8px] text-slate-400 uppercase">Opened</p><p class="text-xs">${getTimeOnly(s['Bill Created Time'])}</p></div>
-                    <div><p class="text-[8px] text-slate-400 uppercase">Closed</p><p class="text-xs text-right">${getTimeOnly(s['Bill Invoice Time'])}</p></div>
+                    <div><p class="text-[8px] text-slate-400 uppercase">Closed</p><p class="text-xs">${getTimeOnly(s['Bill Invoice Time'])}</p></div>
                 </div>`;
             const t = document.getElementById('modalItemsTable'); t.innerHTML = '';
             const items = rawItems.filter(i => i['Invoice Number'] === id);
             if (items.length) {
                 items.forEach(i => {
-                    const isVoided = (i['Status'] === 'returned' || i['Status'] === 'voided' || (i['Status'] && i['Status'].toLowerCase().includes('void')));
-                    const rowClass = isVoided ? 'bg-red-50 dark:bg-red-900/20 text-red-600 font-semibold' : 'border-b dark:border-slate-700 text-slate-900 dark:text-slate-100';
-                    t.innerHTML += `<tr class="${rowClass}"><td class="py-2 px-1 flex items-center justify-between">${i['Product']} ${isVoided ? '<span class="ml-2 text-[8px] bg-red-600 text-white px-1 py-0.5 rounded font-black tracking-tighter">VOIDED</span>' : ''}</td><td class="py-2 text-center">${i['Quantity']}</td><td class="py-2 text-right font-bold">${fmt.format(i['Item Total'])}</td></tr>`;
+                    const status = (i['Status'] || '').toLowerCase();
+                    const isScrapped = status.includes('scrap');
+                    const isReturned = status.includes('return') || status.includes('void');
+                    const isRemoved = isScrapped || isReturned;
+                    const rowClass = isRemoved ? (isScrapped ? 'bg-orange-50 dark:bg-orange-900/20 text-orange-600 font-semibold' : 'bg-red-50 dark:bg-red-900/20 text-red-600 font-semibold') : 'border-b dark:border-slate-700 text-slate-900 dark:text-slate-100';
+                    let badge = '';
+                    if (isScrapped) badge = '<span class="ml-2 text-[8px] bg-orange-500 text-white px-1 py-0.5 rounded font-black tracking-tighter">SCRAPPED</span>';
+                    else if (isReturned) badge = '<span class="ml-2 text-[8px] bg-red-600 text-white px-1 py-0.5 rounded font-black tracking-tighter">VOIDED</span>';
+                    t.innerHTML += `<tr class="${rowClass}"><td class="py-2 px-1 flex items-center justify-between">${i['Product']} ${badge}</td><td class="py-2 text-center">${i['Quantity']}</td><td class="py-2 text-right font-bold">${fmt.format(i['Item Total'])}</td></tr>`;
                 });
             } else t.innerHTML = `<tr><td colspan="3" class="p-8 text-center text-slate-400 italic">No item detail available.</td></tr>`;
             document.getElementById('invoiceModal').classList.remove('hidden'); lockScroll();
@@ -1406,6 +1515,12 @@
         let salesRowsPerPage = 10;
         let salesCharts = {};
         let salesRawInfoData = null;
+        let salesMatrixPage = 1;
+        let salesMatrixRowsPerPage = 10;
+        let salesMatrixData = [];
+        let salesOpenTablesPage = 1;
+        let salesOpenTablesRowsPerPage = 10;
+        let salesOpenTablesData = [];
 
         const salesInfoTexts = {
             gross: { title: "Gross Sales", content: "The total value of all items sold before any deductions." },
@@ -1419,7 +1534,9 @@
             site: { title: "Revenue by Site", content: "Distribution showing which location generates the most revenue." },
             efficiency: { title: "Efficiency (Avg. Sale)", content: "Calculated by dividing Gross Sales by Transactions." },
             matrix: { title: "Employee Matrix", content: "Deep audit of productivity per staff member." },
-            audit: { title: "Audit Log", content: "Searchable list of every invoice." }
+            audit: { title: "Audit Log", content: "Searchable list of every invoice." },
+            opentables: { title: "Open Tables", content: "Transactions where the payment method is a dash (-), indicating the bill has not been finalized. They represent outstanding/unpaid tables grouped by order number." },
+            voids: { title: "Void Analysis", content: "Total value of line items removed from bills before or after closing." }
         };
 
         function salesShowInfo(key) {
@@ -1461,7 +1578,7 @@
                     tenders = []; const splitAmount = billTotal / methodsArr.length;
                     methodsArr.forEach(m => { tenders.push({ method: m, amount: splitAmount }); });
                 }
-                return { inv: row['Invoice Number'] || row['Invoice'], emp: row['Employee Name'] || row['Employee'], site: row['Site'], time: row['Bill Invoice Time'] || row['Time'], gross: parseFloat(row['Gross Sale Amount'] || row['Bill Total'] || 0), billTotal, vat: parseFloat(row['Total VAT'] || row['Total Tax'] || 0), refunds: parseFloat(row['Refunds Total'] || row['Total Refunds'] || 0), voids: parseFloat(row['Voids Total'] || row['Total Voids'] || 0), surcharges: surcharge, discounts: disc, net: parseFloat(row['Net Sale Amount'] || 0), tip: parseFloat(row['Tip'] || row['Total Tip'] || 0), method: methodsStr, tenders };
+                return { inv: row['Invoice Number'] || row['Invoice'], orderNum: row['Order Number'] || row['Order'] || '', emp: row['Employee Name'] || row['Employee'], site: row['Site'], time: row['Bill Invoice Time'] || row['Time'], gross: parseFloat(row['Gross Sale Amount'] || row['Bill Total'] || 0), billTotal, vat: parseFloat(row['Total VAT'] || row['Total Tax'] || 0), refunds: parseFloat(row['Refunds Total'] || row['Total Refunds'] || 0), voids: parseFloat(row['Voids Total'] || row['Total Voids'] || 0), surcharges: surcharge, discounts: disc, net: parseFloat(row['Net Sale Amount'] || 0), tip: parseFloat(row['Tip'] || row['Total Tip'] || 0), method: methodsStr, tenders };
             }).filter(t => t.inv);
             salesFilteredTransactions = [...salesAllTransactions];
             salesCurrentPage = 1;
@@ -1469,21 +1586,31 @@
             salesRenderCharts(salesAllTransactions);
             salesRenderPaymentSummary(salesAllTransactions);
             salesRenderEmployeeMatrix(salesAllTransactions);
+            salesRenderOpenTables(salesAllTransactions);
             salesRenderTransactions();
             if (info) { const range = info.find(r => r[0] === 'Date Range'); if (range) document.getElementById('sales-report-period').textContent = range[1]; }
         }
 
         function salesUpdateKPIs(data) {
-            const t = data.reduce((acc, c) => { acc.g += c.gross; acc.v += c.vat; acc.d += c.discounts; acc.r += c.refunds; acc.n += c.net; acc.tp += c.tip; if(c.tip > 0) acc.tc++; if(c.refunds > 0) acc.rc++; if(c.discounts > 0) acc.dc++; return acc; }, { g:0, v:0, d:0, r:0, n:0, tp:0, tc:0, rc:0, dc:0 });
+            const t = data.reduce((acc, c) => { 
+                acc.g += c.gross; acc.v += c.vat; acc.d += c.discounts; acc.r += c.refunds; 
+                acc.vo += (c.voids || 0); acc.n += c.net; acc.tp += c.tip; 
+                if(c.tip > 0) acc.tc++; if(c.refunds > 0) acc.rc++; 
+                if(c.voids > 0) acc.voc++; if(c.discounts > 0) acc.dc++; return acc; 
+            }, { g:0, v:0, d:0, r:0, vo:0, n:0, tp:0, tc:0, rc:0, voc:0, dc:0 });
+            
             document.getElementById('sales-kpi-gross').textContent = salesFormatCurrency(t.g);
             document.getElementById('sales-kpi-vat').textContent = salesFormatCurrency(t.v);
             document.getElementById('sales-kpi-discounts').textContent = salesFormatCurrency(t.d);
             document.getElementById('sales-kpi-refunds').textContent = salesFormatCurrency(t.r);
+            document.getElementById('sales-kpi-voids').textContent = salesFormatCurrency(t.vo);
             document.getElementById('sales-kpi-tips').textContent = salesFormatCurrency(t.tp);
             document.getElementById('sales-kpi-net').textContent = salesFormatCurrency(t.n);
+            
             document.getElementById('sales-kpi-count').textContent = `${data.length} Transactions`;
             document.getElementById('sales-kpi-discounts-count').textContent = `${t.dc} Applied`;
             document.getElementById('sales-kpi-refund-count').textContent = t.rc > 0 ? `${t.rc} Refunded` : 'No refunds';
+            document.getElementById('sales-kpi-voids-count').textContent = `${t.voc} Detected`;
             document.getElementById('sales-kpi-tips-count').textContent = `${t.tc} Tips`;
             document.getElementById('sales-avg-transaction-value').textContent = salesFormatCurrency(data.length > 0 ? t.g/data.length : 0).replace('ZAR', '');
         }
@@ -1501,6 +1628,7 @@
             tbody.innerHTML = subset.map(t => `
                 <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
                     <td class="px-8 py-5 font-black text-indigo-600 dark:text-indigo-400 tracking-tighter">${t.inv}</td>
+                    <td class="px-8 py-4 font-mono text-xs text-slate-400">${t.orderNum || '\u2014'}</td>
                     <td class="px-8 py-4 dark:text-slate-400 text-xs font-bold uppercase tracking-tight">${t.emp}</td>
                     <td class="px-8 py-4 text-right font-black dark:text-white">${salesFormatCurrency(t.billTotal)}</td>
                     <td class="px-8 py-4 text-center">
@@ -1514,19 +1642,30 @@
         function salesViewInvoice(inv) {
             const txn = salesAllTransactions.find(t => t.inv === inv); if (!txn) return;
             document.getElementById('sales-modal-title').textContent = inv;
-            document.getElementById('sales-modal-subtitle').textContent = `Staff: ${txn.emp} • ${txn.time || 'Time unknown'}`;
-            document.getElementById('sales-modal-paid').textContent = salesFormatCurrency(txn.billTotal);
+            document.getElementById('sales-modal-subtitle').textContent = `Staff: ${txn.emp} \u2022 ${txn.time || 'Time unknown'}`;
+            document.getElementById('sales-modal-bill-total').textContent = salesFormatCurrency(txn.billTotal);
+            document.getElementById('sales-modal-paid').textContent = salesFormatCurrency(txn.gross);
+            document.getElementById('sales-modal-tip').textContent = salesFormatCurrency(txn.tip);
+            document.getElementById('sales-modal-order-num').textContent = txn.orderNum || '\u2014';
             document.getElementById('sales-modal-tax').textContent = salesFormatCurrency(txn.vat);
             document.getElementById('sales-modal-disc').textContent = salesFormatCurrency(txn.discounts);
-            document.getElementById('sales-modal-tip').textContent = salesFormatCurrency(txn.tip);
             const items = salesItemizedRecords.filter(r => (r['Invoice Number'] || r['Invoice']) === inv);
-            document.getElementById('sales-modal-items-body').innerHTML = items.length > 0 ? items.map(i => `
-                <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-colors">
-                    <td class="px-6 py-4 font-semibold text-slate-700 dark:text-slate-300 text-xs">${i.Product || 'Unknown'}</td>
+            document.getElementById('sales-modal-items-body').innerHTML = items.length > 0 ? items.map(i => {
+                const status = (i['Status'] || '').toLowerCase();
+                const isScrapped = status.includes('scrap');
+                const isReturned = status.includes('return') || status.includes('void');
+                const isRemoved = isScrapped || isReturned;
+                const rowClass = isRemoved ? (isScrapped ? 'bg-orange-50 dark:bg-orange-900/20 text-orange-600 font-semibold' : 'bg-red-50 dark:bg-red-900/20 text-red-600 font-semibold') : 'hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-colors';
+                let badge = '';
+                if (isScrapped) badge = '<span class="ml-2 text-[8px] bg-orange-500 text-white px-1.5 py-0.5 rounded font-black tracking-tighter">SCRAPPED</span>';
+                else if (isReturned) badge = '<span class="ml-2 text-[8px] bg-red-600 text-white px-1.5 py-0.5 rounded font-black tracking-tighter">VOIDED</span>';
+                return `<tr class="${rowClass}">
+                    <td class="px-6 py-4 font-semibold text-xs flex items-center justify-between"><span>${i.Product || 'Unknown'}</span>${badge}</td>
                     <td class="px-6 py-4 text-right font-black text-slate-400 text-xs">${i.Quantity}</td>
                     <td class="px-6 py-4 text-right font-bold text-slate-600 dark:text-slate-400 text-xs">${salesFormatCurrency(i['Item Price']).replace('ZAR', '')}</td>
-                    <td class="px-6 py-4 text-right font-black text-slate-900 dark:text-white text-xs">${salesFormatCurrency(i['Item Total']).replace('ZAR', '')}</td>
-                </tr>`).join('') : `<tr><td colspan="4" class="px-6 py-12 text-center text-slate-400 font-bold italic tracking-widest uppercase text-[10px]">No itemized data found</td></tr>`;
+                    <td class="px-6 py-4 text-right font-black text-xs">${salesFormatCurrency(i['Item Total']).replace('ZAR', '')}</td>
+                </tr>`;
+            }).join('') : `<tr><td colspan="4" class="px-6 py-12 text-center text-slate-400 font-bold italic tracking-widest uppercase text-[10px]">No itemized data found</td></tr>`;
             document.getElementById('sales-txn-modal').classList.remove('hidden'); lockScroll();
         }
         function salesCloseModal() { document.getElementById('sales-txn-modal').classList.add('hidden'); unlockScroll(); }
@@ -1565,46 +1704,205 @@
             });
             const sites = {}; data.forEach(t => { sites[t.site] = (sites[t.site] || 0) + t.gross; });
             salesCharts.site = new Chart(document.getElementById('salesSiteChart'), {
-                type: 'doughnut', data: { labels: Object.keys(sites), datasets: [{ data: Object.values(sites), backgroundColor: ['#6366f1', '#10b981', '#f59e0b', '#ec4899'], borderWidth: 0, hoverOffset: 10 }] },
-                options: { responsive: true, maintainAspectRatio: false, cutout: '78%', plugins: { legend: { position: 'bottom', labels: { color: labelColor, boxWidth: 10, font: { size: 10, weight: 'bold' } } } } }
+                type: 'doughnut', data: { labels: Object.keys(sites), datasets: [{ data: Object.values(sites), backgroundColor: ['#6366f1', '#ec4899', '#f59e0b', '#10b981', '#06b6d4', '#8b5cf6'], borderWidth: 0, hoverOffset: 20 }] },
+                options: { responsive: true, maintainAspectRatio: false, cutout: '75%', plugins: { legend: { display: false } } }
             });
         }
 
         function salesRenderPaymentSummary(data) {
             const summaryBody = document.getElementById('sales-payment-summary-body'); if (!summaryBody) return;
             const summary = {}; let total = 0;
-            data.forEach(t => { if (t.tenders) { t.tenders.forEach(tender => { const m = tender.method; if (!summary[m]) summary[m] = { c: 0, a: 0 }; summary[m].c++; summary[m].a += tender.amount; total += tender.amount; }); } });
-            summaryBody.innerHTML = Object.entries(summary).sort((a,b) => b[1].a - a[1].a).map(([m, s]) => `
-                <tr class="dark:text-slate-300 transition-colors"><td class="py-5 font-black uppercase tracking-tight text-xs">${m}</td><td class="py-5 text-right font-bold text-slate-500">${s.c}</td><td class="py-5 text-right font-black text-slate-900 dark:text-white">${salesFormatCurrency(s.a)}</td><td class="py-5 text-right"><span class="px-2 py-1 bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 rounded text-[10px] font-black tracking-tighter">${((s.a/total)*100).toFixed(1)}%</span></td></tr>`).join('');
+            data.forEach(t => { if (t.tenders) { t.tenders.forEach(tender => { let m = tender.method; if (m === '-' || m === '\u2014' || m.trim() === '' || m.toLowerCase() === 'dash') { m = 'Open Tables (Outstanding)'; } if (!summary[m]) summary[m] = { c: 0, a: 0 }; summary[m].c++; summary[m].a += tender.amount; total += tender.amount; }); } });
+            summaryBody.innerHTML = Object.entries(summary).sort((a,b) => b[1].a - a[1].a).map(([m, s]) => {
+                const isOpen = m.includes('Open Tables');
+                return `<tr class="dark:text-slate-300 transition-colors ${isOpen ? 'bg-amber-50/50 dark:bg-amber-900/10' : ''}"><td class="py-5 font-black uppercase tracking-tight text-xs ${isOpen ? 'text-amber-700 dark:text-amber-400' : ''}">${isOpen ? '\u26a0 ' : ''}${m}</td><td class="py-5 text-right font-bold text-slate-500">${s.c}</td><td class="py-5 text-right font-black ${isOpen ? 'text-amber-700 dark:text-amber-400' : 'text-slate-900 dark:text-white'}">${salesFormatCurrency(s.a)}</td><td class="py-5 text-right"><span class="px-2 py-1 ${isOpen ? 'bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400' : 'bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400'} rounded text-[10px] font-black tracking-tighter">${((s.a/total)*100).toFixed(1)}%</span></td></tr>`;
+            }).join('');
         }
 
         function salesRenderEmployeeMatrix(data) {
-            const matrixBody = document.getElementById('sales-employee-matrix-body'); if (!matrixBody) return;
             const emps = {};
-            data.forEach(t => { const n = t.emp || 'Unknown'; if (!emps[n]) emps[n] = { c:0, g:0, v:0, r:0, d:0, n:0, tp:0, sur:0 }; emps[n].c++; emps[n].g += t.gross; emps[n].v += t.vat; emps[n].r += t.refunds; emps[n].d += t.discounts; emps[n].n += t.net; emps[n].tp += t.tip; emps[n].sur += (t.surcharges || 0); });
-            matrixBody.innerHTML = Object.entries(emps).sort((a,b) => b[1].g - a[1].g).map(([n, s]) => `
+            data.forEach(t => { 
+                const n = t.emp || 'Unknown'; 
+                if (!emps[n]) emps[n] = { c:0, g:0, v:0, r:0, d:0, n:0, tp:0, sur:0, vo:0 }; 
+                emps[n].c++; 
+                emps[n].g += t.gross; 
+                emps[n].v += t.vat; 
+                emps[n].r += t.refunds; 
+                emps[n].d += t.discounts; 
+                emps[n].n += t.net; 
+                emps[n].tp += t.tip; 
+                emps[n].sur += (t.surcharges || 0); 
+                emps[n].vo += (t.voids || 0); 
+            });
+            salesMatrixData = Object.entries(emps).sort((a,b) => b[1].g - a[1].g);
+            salesRenderMatrixPage();
+        }
+
+        function salesRenderMatrixPage() {
+            const matrixBody = document.getElementById('sales-employee-matrix-body'); if (!matrixBody) return;
+            const totalRecords = salesMatrixData.length;
+            const totalPages = Math.ceil(totalRecords / salesMatrixRowsPerPage) || 1;
+            if (salesMatrixPage > totalPages) salesMatrixPage = totalPages;
+            const subset = salesMatrixData.slice((salesMatrixPage - 1) * salesMatrixRowsPerPage, salesMatrixPage * salesMatrixRowsPerPage);
+            document.getElementById('sales-matrix-count-label').textContent = `Showing ${(salesMatrixPage - 1) * salesMatrixRowsPerPage + 1} - ${Math.min(salesMatrixPage * salesMatrixRowsPerPage, totalRecords)} of ${totalRecords} employees`;
+            document.getElementById('sales-matrix-page-indicator').textContent = `Page ${salesMatrixPage} of ${totalPages}`;
+            document.getElementById('sales-matrix-pagination').classList.toggle('hidden', totalRecords === 0);
+            matrixBody.innerHTML = subset.map(([n, s]) => `
                 <tr class="hover:bg-indigo-50/20 dark:hover:bg-indigo-900/10 group transition-colors">
                     <td class="px-5 py-5"><div class="flex items-center gap-4"><div class="w-8 h-8 rounded-lg bg-slate-100 dark:bg-slate-700 flex items-center justify-center text-slate-400 font-black text-[10px] uppercase">${n.charAt(0)}</div><span class="font-bold text-xs uppercase tracking-tight">${n}</span></div></td>
                     <td class="px-5 py-5 text-right font-bold text-slate-400 text-xs">${s.c}</td>
                     <td class="px-5 py-5 text-right font-black text-indigo-500 text-xs">${salesFormatCurrency(s.g).replace('ZAR', '')}</td>
                     <td class="px-5 py-5 text-right font-bold text-slate-500 text-xs opacity-60">${salesFormatCurrency(s.v).replace('ZAR', '')}</td>
                     <td class="px-5 py-5 text-right font-bold text-amber-500 text-xs">${salesFormatCurrency(s.sur).replace('ZAR', '')}</td>
-                    <td class="px-5 py-5 text-right font-bold text-amber-600 text-xs">${salesFormatCurrency(s.sur / 1.15).replace('ZAR', '')}</td>
-                    <td class="px-5 py-5 text-right font-bold text-rose-400 text-xs">${s.r > 0 ? salesFormatCurrency(s.r).replace('ZAR', '') : '—'}</td>
+                    <td class="px-5 py-5 text-right font-bold text-rose-400 text-xs">${s.r > 0 ? salesFormatCurrency(s.r).replace('ZAR', '') : '\u2014'}</td>
+                    <td class="px-5 py-5 text-right font-bold text-red-500 text-xs">${s.vo > 0 ? salesFormatCurrency(s.vo).replace('ZAR', '') : '\u2014'}</td>
                     <td class="px-5 py-5 text-right font-black text-slate-900 dark:text-white text-xs">${salesFormatCurrency(s.n).replace('ZAR', '')}</td>
                     <td class="px-5 py-5 text-right font-black text-emerald-500 text-xs">${salesFormatCurrency(s.tp).replace('ZAR', '')}</td>
                 </tr>`).join('');
         }
 
-        // Sales Pagination
+        function salesSwitchTab(tab) {
+            document.querySelectorAll('.sales-tab-section').forEach(s => s.classList.add('hidden'));
+            document.querySelectorAll('[id^="sales-tab-"]').forEach(b => {
+                b.classList.remove('border-indigo-500', 'text-indigo-600', 'dark:text-indigo-400');
+                b.classList.add('border-transparent', 'text-slate-400');
+            });
+            const btn = document.getElementById(`sales-tab-${tab}`);
+            const sec = document.getElementById(`sales-section-${tab}`);
+            if (btn && sec) {
+                btn.classList.remove('border-transparent', 'text-slate-400');
+                btn.classList.add('border-indigo-500', 'text-indigo-600', 'dark:text-indigo-400');
+                sec.classList.remove('hidden');
+            }
+        }
+
+        function salesRenderOpenTables(data) {
+            salesOpenTablesData = data.filter(t => { const m = (t.method || '').trim(); return m === '-' || m === '\u2014' || m === ''; });
+            const section = document.getElementById('sales-section-open');
+            const tabBtn = document.getElementById('sales-tab-open');
+            if (salesOpenTablesData.length === 0) { 
+                if (section) section.classList.add('hidden'); 
+                if (tabBtn) tabBtn.classList.add('hidden');
+                return; 
+            }
+            if (tabBtn) tabBtn.classList.remove('hidden');
+            salesOpenTablesPage = 1;
+            salesRenderOpenTablesPage();
+        }
+
+        function salesRenderOpenTablesPage() {
+            const tbody = document.getElementById('sales-open-tables-body');
+            const totalRecords = salesOpenTablesData.length;
+            const totalPages = Math.ceil(totalRecords / salesOpenTablesRowsPerPage) || 1;
+            if (salesOpenTablesPage > totalPages) salesOpenTablesPage = totalPages;
+            const subset = salesOpenTablesData.slice((salesOpenTablesPage - 1) * salesOpenTablesRowsPerPage, salesOpenTablesPage * salesOpenTablesRowsPerPage);
+            document.getElementById('sales-open-tables-count-label').textContent = `${totalRecords} open table${totalRecords !== 1 ? 's' : ''} outstanding`;
+            document.getElementById('sales-open-tables-page-indicator').textContent = `Page ${salesOpenTablesPage} of ${totalPages}`;
+            document.getElementById('sales-open-tables-pagination').classList.toggle('hidden', totalRecords === 0);
+            tbody.innerHTML = subset.map(t => {
+                const inv = t.inv || '\u2014';
+                const orderNum = t.orderNum || '\u2014';
+                const isDash = inv === '-' || inv === '\u2014' || !inv.trim();
+                // Get products for this transaction from itemized records
+                let products = '\u2014';
+                if (t.orderNum) {
+                    const matchedItems = salesItemizedRecords.filter(r => (r['Order Number'] || r['Order'] || '') === t.orderNum);
+                    if (matchedItems.length > 0) {
+                        products = matchedItems.map(i => `<span class="inline-block bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 px-1.5 py-0.5 rounded text-[9px] font-bold mr-1 mb-0.5">${i['Product'] || 'Item'} x${i['Quantity'] || 1}</span>`).join('');
+                    }
+                }
+                if (products === '\u2014' && !isDash) {
+                    const matchedItems = salesItemizedRecords.filter(r => (r['Invoice Number'] || r['Invoice'] || '') === inv);
+                    if (matchedItems.length > 0) {
+                        products = matchedItems.map(i => `<span class="inline-block bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 px-1.5 py-0.5 rounded text-[9px] font-bold mr-1 mb-0.5">${i['Product'] || 'Item'} x${i['Quantity'] || 1}</span>`).join('');
+                    }
+                }
+                return `<tr class="hover:bg-amber-50/30 dark:hover:bg-amber-900/10 transition-colors">
+                    <td class="px-6 py-5 font-black text-amber-700 dark:text-amber-400 tracking-tighter">${orderNum}</td>
+                    <td class="px-6 py-4 font-mono text-xs text-slate-400">${isDash ? '<span class="text-amber-500 font-bold">\u2014</span>' : inv}</td>
+                    <td class="px-6 py-4 dark:text-slate-400 text-xs font-bold uppercase tracking-tight">${t.emp || '\u2014'}</td>
+                    <td class="px-6 py-4 text-right font-bold text-slate-700 dark:text-slate-300">${salesFormatCurrency(t.gross)}</td>
+                    <td class="px-6 py-4 text-right font-bold text-emerald-500">${salesFormatCurrency(t.tip)}</td>
+                    <td class="px-6 py-4 text-right font-black text-amber-700 dark:text-amber-400">${salesFormatCurrency(t.billTotal)}</td>
+                    <td class="px-6 py-4 text-center">
+                        <button onclick="salesViewOpenTableDetails('${orderNum}', '${inv}', '${(t.emp || '').replace(/'/g, "\\'")}')" class="p-2 bg-amber-50 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400 rounded-xl hover:bg-amber-600 hover:text-white transition-all shadow-sm">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+                        </button>
+                    </td>
+                </tr>`;
+            }).join('');
+        }
+
+        function salesViewOpenTableDetails(orderNum, inv, emp) {
+            const isDash = inv === '-' || inv === '\u2014' || !inv.trim();
+            // Strict matching: Find the exact transaction by Order #, Invoice, and Employee
+            let txn = salesOpenTablesData.find(t => t.orderNum === orderNum && t.inv === inv && t.emp === emp);
+            
+            if (!txn && !isDash) {
+                txn = salesAllTransactions.find(t => t.inv === inv && t.emp === emp);
+            }
+            if (!txn) return;
+
+            document.getElementById('sales-modal-title').textContent = isDash ? `Order #${orderNum}` : inv;
+            document.getElementById('sales-modal-subtitle').textContent = `Staff: ${txn.emp} \u2022 ${txn.time || 'Time unknown'}`;
+            document.getElementById('sales-modal-bill-total').textContent = salesFormatCurrency(txn.billTotal);
+            document.getElementById('sales-modal-paid').textContent = salesFormatCurrency(txn.gross);
+            document.getElementById('sales-modal-tip').textContent = salesFormatCurrency(txn.tip);
+            document.getElementById('sales-modal-order-num').textContent = txn.orderNum || '\u2014';
+            document.getElementById('sales-modal-tax').textContent = salesFormatCurrency(txn.vat);
+            document.getElementById('sales-modal-disc').textContent = salesFormatCurrency(txn.discounts);
+
+            let items = [];
+            if (orderNum && orderNum !== '\u2014') {
+                // Filter items by BOTH Order Number and Employee to ensure correct attribution
+                items = salesItemizedRecords.filter(r => 
+                    (r['Order Number'] || r['Order'] || '') === orderNum && 
+                    (r['Employee Name'] || r['Employee'] || '') === emp
+                );
+            }
+            if (items.length === 0 && !isDash) {
+                items = salesItemizedRecords.filter(r => 
+                    (r['Invoice Number'] || r['Invoice'] || '') === inv
+                );
+            }
+
+            document.getElementById('sales-modal-items-body').innerHTML = items.length > 0 ? items.map(i => {
+                const status = (i['Status'] || '').toLowerCase();
+                const isScrapped = status.includes('scrap');
+                const isReturned = status.includes('return') || status.includes('void');
+                const isRemoved = isScrapped || isReturned;
+                const rowClass = isRemoved ? (isScrapped ? 'bg-orange-50 dark:bg-orange-900/20 text-orange-600 font-semibold' : 'bg-red-50 dark:bg-red-900/20 text-red-600 font-semibold') : 'hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-colors';
+                let badge = '';
+                if (isScrapped) badge = '<span class="ml-2 text-[8px] bg-orange-500 text-white px-1.5 py-0.5 rounded font-black tracking-tighter">SCRAPPED</span>';
+                else if (isReturned) badge = '<span class="ml-2 text-[8px] bg-red-600 text-white px-1.5 py-0.5 rounded font-black tracking-tighter">VOIDED</span>';
+                return `<tr class="${rowClass}">
+                    <td class="px-6 py-4 font-semibold text-xs flex items-center justify-between"><span>${i.Product || 'Unknown'}</span>${badge}</td>
+                    <td class="px-6 py-4 text-right font-black text-slate-400 text-xs">${i.Quantity}</td>
+                    <td class="px-6 py-4 text-right font-black text-xs">${salesFormatCurrency(parseFloat(i['Item Total'] || 0))}</td>
+                </tr>`;
+            }).join('') : `<tr><td colspan="3" class="px-6 py-10 text-center text-slate-400 italic text-xs">No item details found for this table</td></tr>`;
+
+            document.getElementById('sales-txn-modal').classList.remove('hidden');
+            lockScroll();
+        }
+
+        // Sales Pagination - Audit Log
         document.getElementById('sales-prev-page').addEventListener('click', () => { if (salesCurrentPage > 1) { salesCurrentPage--; salesRenderTransactions(); } });
         document.getElementById('sales-next-page').addEventListener('click', () => { if (salesCurrentPage < Math.ceil(salesFilteredTransactions.length / salesRowsPerPage)) { salesCurrentPage++; salesRenderTransactions(); } });
         document.getElementById('sales-rows-per-page').addEventListener('change', (e) => { salesRowsPerPage = parseInt(e.target.value); salesCurrentPage = 1; salesRenderTransactions(); });
         document.getElementById('sales-transaction-search').addEventListener('input', (e) => {
             const term = e.target.value.toLowerCase();
-            salesFilteredTransactions = salesAllTransactions.filter(t => String(t.inv).toLowerCase().includes(term) || String(t.emp).toLowerCase().includes(term));
+            salesFilteredTransactions = salesAllTransactions.filter(t => String(t.inv).toLowerCase().includes(term) || String(t.emp).toLowerCase().includes(term) || String(t.orderNum).toLowerCase().includes(term));
             salesCurrentPage = 1; salesRenderTransactions();
         });
+        // Sales Pagination - Employee Matrix
+        document.getElementById('sales-matrix-prev').addEventListener('click', () => { if (salesMatrixPage > 1) { salesMatrixPage--; salesRenderMatrixPage(); } });
+        document.getElementById('sales-matrix-next').addEventListener('click', () => { if (salesMatrixPage < Math.ceil(salesMatrixData.length / salesMatrixRowsPerPage)) { salesMatrixPage++; salesRenderMatrixPage(); } });
+        document.getElementById('sales-matrix-rows-per-page').addEventListener('change', (e) => { salesMatrixRowsPerPage = parseInt(e.target.value); salesMatrixPage = 1; salesRenderMatrixPage(); });
+        // Sales Pagination - Open Tables
+        document.getElementById('sales-open-tables-prev').addEventListener('click', () => { if (salesOpenTablesPage > 1) { salesOpenTablesPage--; salesRenderOpenTablesPage(); } });
+        document.getElementById('sales-open-tables-next').addEventListener('click', () => { if (salesOpenTablesPage < Math.ceil(salesOpenTablesData.length / salesOpenTablesRowsPerPage)) { salesOpenTablesPage++; salesRenderOpenTablesPage(); } });
+        document.getElementById('sales-open-tables-rows').addEventListener('change', (e) => { salesOpenTablesRowsPerPage = parseInt(e.target.value); salesOpenTablesPage = 1; salesRenderOpenTablesPage(); });
 
         // Initialize sales data
         salesCheckSharedData();
