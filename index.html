@@ -13,6 +13,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/localforage/1.10.0/localforage.min.js"></script>
     <script>
         tailwind.config = {
             darkMode: 'class',
@@ -877,7 +878,7 @@
         // ═══════════════════════════════════════════
         // ═══ SPA ROUTER ═══
         // ═══════════════════════════════════════════
-        function showView(view) {
+        async function showView(view) {
             const landing = document.getElementById('view-landing');
             const fraud = document.getElementById('view-fraud');
             const sales = document.getElementById('view-sales');
@@ -889,11 +890,11 @@
             if (view === 'fraud') {
                 fraud.classList.remove('hidden');
                 document.body.classList.add('spa-fraud-active');
-                checkSharedData();
+                await checkSharedData();
             } else if (view === 'sales') {
                 sales.classList.remove('hidden');
                 document.body.classList.add('spa-sales-active');
-                salesCheckSharedData();
+                await salesCheckSharedData();
                 if (salesAllTransactions.length > 0) salesRenderCharts(salesAllTransactions);
             } else {
                 landing.classList.remove('hidden');
@@ -930,15 +931,15 @@
         // ═══════════════════════════════════════════
         // ═══ LANDING PAGE: IMPORT STATE ═══
         // ═══════════════════════════════════════════
-        function updateImportState() {
+        async function updateImportState() {
             const btn = document.getElementById('importBtn');
             const label = document.getElementById('importLabel');
             const icon = document.getElementById('importIcon');
-            const data = localStorage.getItem('yoco_portal_data');
+            const data = await localforage.getItem('yoco_portal_data');
             const siteLabel = document.getElementById('siteNameLabel');
             if (data) {
                 try {
-                    const parsed = JSON.parse(data);
+                    const parsed = typeof data === 'string' ? JSON.parse(data) : data;
                     const name = parsed.fileName || 'Report';
                     const short = name.length > 18 ? name.substring(0, 15) + '...' : name;
                     label.textContent = '✓ ' + short;
@@ -953,7 +954,7 @@
                         siteLabel.textContent = [...sites].join(', ');
                         siteLabel.style.display = 'inline-block';
                     } else { siteLabel.style.display = 'none'; }
-                } catch(e) {}
+                } catch(e) { console.error("Error parsing data", e); }
             } else {
                 label.textContent = 'Import Report';
                 btn.classList.remove('loaded');
@@ -962,8 +963,8 @@
             }
         }
 
-        function handleImportClick() {
-            const data = localStorage.getItem('yoco_portal_data');
+        async function handleImportClick() {
+            const data = await localforage.getItem('yoco_portal_data');
             if (data) {
                 const s = document.getElementById('importStatus');
                 s.className = 'import-status cleared';
@@ -993,12 +994,13 @@
                 }
             }
             if (portalData.sales.length) {
-                localStorage.setItem('yoco_portal_data', JSON.stringify(portalData));
+                await localforage.setItem('yoco_portal_data', portalData);
+                syncChannel.postMessage('data_updated');
                 const s = document.getElementById('importStatus');
                 s.className = 'import-status';
                 s.innerText = '✓ Report Imported Successfully';
                 s.style.display = 'block';
-                updateImportState();
+                await updateImportState();
                 setTimeout(() => s.style.display = 'none', 3000);
             }
         });
@@ -1006,14 +1008,15 @@
         // ─── Clear Modal ───
         function openClearModal() { document.getElementById('clearModal').classList.add('show'); lockScroll(); }
         function closeClearModal() { document.getElementById('clearModal').classList.remove('show'); unlockScroll(); }
-        function confirmClear() {
+        async function confirmClear() {
             closeClearModal();
-            localStorage.removeItem('yoco_portal_data');
+            await localforage.removeItem('yoco_portal_data');
+            syncChannel.postMessage('data_updated');
             const s = document.getElementById('importStatus');
             s.className = 'import-status cleared';
             s.innerText = '🗑️ Data Cleared Successfully';
             s.style.display = 'block';
-            updateImportState();
+            await updateImportState();
             resetFraudDashboard();
             setTimeout(() => { s.style.display = 'none'; s.className = 'import-status'; showUploadModal(); }, 2000);
         }
@@ -1050,18 +1053,16 @@
                 }
             }
             if (portalData.sales.length) {
-                localStorage.setItem('yoco_portal_data', JSON.stringify(portalData));
+                await localforage.setItem('yoco_portal_data', portalData);
                 closeUploadModal();
                 const s = document.getElementById('importStatus');
                 s.className = 'import-status';
                 s.innerText = '✓ Report Imported Successfully';
                 s.style.display = 'block';
-                updateImportState();
+                await updateImportState();
                 setTimeout(() => s.style.display = 'none', 3000);
             }
         }
-
-        updateImportState();
 
         // ─── Welcome Tutorial ───
         function showWelcome() {
@@ -1072,15 +1073,6 @@
             document.getElementById('welcomeModal').classList.remove('show'); unlockScroll();
             document.getElementById('tutorialVideo').src = '';
             localStorage.setItem('yoco_tutorial_seen', 'true');
-            if (!localStorage.getItem('yoco_portal_data')) {
-                setTimeout(showUploadModal, 400);
-            }
-        }
-
-        if (!localStorage.getItem('yoco_tutorial_seen')) {
-            showWelcome();
-        } else if (!localStorage.getItem('yoco_portal_data')) {
-            showUploadModal();
         }
 
         // ─── Navigation Dots ───
@@ -1094,18 +1086,23 @@
             }
         }
 
-        // Theme Sync Listener (cross-tab)
-        window.addEventListener('storage', (e) => {
-            if (e.key === 'theme') {
+        // Sync across tabs
+        const syncChannel = new BroadcastChannel('yoco_portal_sync');
+        syncChannel.onmessage = async (e) => {
+            if (e.data === 'data_updated') {
+                await updateImportState();
+                if (window.location.hash === '#fraud') await checkSharedData();
+                if (window.location.hash === '#sales') await salesCheckSharedData();
+            }
+        };
+
+        window.addEventListener('storage', async (e) => {
+            if (e.key === 'theme' || e.key === 'localStorage.theme') {
                 const html = document.documentElement;
-                if (e.newValue === 'light') { html.classList.remove('dark'); html.classList.add('light'); }
+                const newTheme = localStorage.theme || e.newValue;
+                if (newTheme === 'light') { html.classList.remove('dark'); html.classList.add('light'); }
                 else { html.classList.remove('light'); html.classList.add('dark'); }
                 updateLandingThemeIcon();
-            }
-            if (e.key === 'yoco_portal_data') {
-                updateImportState();
-                checkSharedData();
-                salesCheckSharedData();
             }
         });
 
@@ -1141,10 +1138,9 @@
             return ts;
         };
 
-        function checkSharedData() {
-            const shared = localStorage.getItem('yoco_portal_data');
-            if (shared) {
-                const data = JSON.parse(shared);
+        async function checkSharedData() {
+            const data = await localforage.getItem('yoco_portal_data');
+            if (data) {
                 rawSales = data.sales || [];
                 rawItems = data.items || [];
                 if (data.info && data.info.length) {
@@ -1537,10 +1533,9 @@
         }
         function salesCloseInfoModal() { document.getElementById('sales-info-modal').classList.add('hidden'); unlockScroll(); }
 
-        function salesCheckSharedData() {
-            const shared = localStorage.getItem('yoco_portal_data');
-            if (shared) {
-                const data = JSON.parse(shared);
+        async function salesCheckSharedData() {
+            const data = await localforage.getItem('yoco_portal_data');
+            if (data) {
                 salesItemizedRecords = data.items || [];
                 salesRawInfoData = data.info || null;
                 if (data.sales && data.sales.length) {
@@ -1982,17 +1977,26 @@
             loading.style.display = 'none';
         }
         // ═══ INITIALIZE ROUTER ═══
-        window.addEventListener('popstate', (e) => {
+        window.addEventListener('popstate', async (e) => {
             const view = (e.state && e.state.view) || 'landing';
-            showView(view);
+            await showView(view);
         });
 
-        // On load: check hash
-        if (window.location.hash === '#fraud') {
-            showView('fraud');
-        } else if (window.location.hash === '#sales') {
-            showView('sales');
-        }
+        // On load: check hash and run initial updates
+        (async () => {
+            await updateImportState();
+            if (window.location.hash === '#fraud') {
+                await showView('fraud');
+            } else if (window.location.hash === '#sales') {
+                await showView('sales');
+            }
+            if (!localStorage.getItem('yoco_tutorial_seen')) {
+                showWelcome();
+            } else {
+                const data = await localforage.getItem('yoco_portal_data');
+                if (!data) showUploadModal();
+            }
+        })();
     </script>
 </body>
 </html>
