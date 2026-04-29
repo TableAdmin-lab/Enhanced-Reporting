@@ -1566,6 +1566,10 @@
                 const billTotal = row['Bill Total'] !== undefined ? parseFloat(row['Bill Total']) : (parseFloat(row['Gross Sale Amount'] || 0) - disc);
                 const surcharge = parseFloat(row['Surcharge'] || row['Total Surcharge'] || row['Surcharges'] || row['Surcharges Total'] || 0);
                 let methodsStr = String(row['Payment Methods'] || row['Method'] || 'Other');
+                let statusStr = String(row['Status'] || row['Bill Status'] || '');
+                if ((methodsStr.trim() === '-' || methodsStr.trim() === '\u2014' || methodsStr.trim() === '') && statusStr.toLowerCase() === 'closed') {
+                    methodsStr = 'Closed (Zero Value)';
+                }
                 let methodsArr = methodsStr.split(',').map(s => { let t = s.trim(); return t.charAt(0).toUpperCase() + t.slice(1).toLowerCase(); }).filter(s => s);
                 if(methodsArr.length === 0) methodsArr = ['Other'];
                 let tenders = []; let exactFound = false; let calculatedRemaining = billTotal;
