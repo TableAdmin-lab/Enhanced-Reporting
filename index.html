@@ -902,17 +902,7 @@
             history.pushState({ view }, '', view === 'landing' ? '#' : '#' + view);
         }
 
-        window.addEventListener('popstate', (e) => {
-            const view = (e.state && e.state.view) || 'landing';
-            showView(view);
-        });
 
-        // On load: check hash
-        if (window.location.hash === '#fraud') {
-            showView('fraud');
-        } else if (window.location.hash === '#sales') {
-            showView('sales');
-        }
 
         // ═══════════════════════════════════════════
         // ═══ UNIFIED THEME ═══
@@ -1990,6 +1980,18 @@
             for (let i = 1; i <= totalPages; i++) { doc.setPage(i); doc.setFontSize(7); doc.setTextColor(150); doc.setFont(undefined, 'normal'); doc.text(`Sales Analytics • End-of-Day Summary • Page ${i} of ${totalPages}`, 14, doc.internal.pageSize.getHeight() - 10); doc.text(`Generated: ${new Date().toLocaleString('en-ZA')}`, pw - 14, doc.internal.pageSize.getHeight() - 10, { align: 'right' }); }
             doc.save(`End_of_Day_Summary_${siteName.replace(/\s+/g, '_')}_${dateStr.replace(/\//g, '-')}.pdf`);
             loading.style.display = 'none';
+        }
+        // ═══ INITIALIZE ROUTER ═══
+        window.addEventListener('popstate', (e) => {
+            const view = (e.state && e.state.view) || 'landing';
+            showView(view);
+        });
+
+        // On load: check hash
+        if (window.location.hash === '#fraud') {
+            showView('fraud');
+        } else if (window.location.hash === '#sales') {
+            showView('sales');
         }
     </script>
 </body>
