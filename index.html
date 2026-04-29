@@ -642,7 +642,7 @@
                 <div class="p-5 bg-gradient-to-br from-white to-slate-50 dark:from-darkCard dark:to-slate-800 border border-slate-200 dark:border-slate-700 shadow-sm rounded-xl">
                     <div class="flex justify-between items-start mb-2"><p class="stat-label">Net Sales</p><span class="info-btn" onclick="salesShowInfo('net')">ⓘ</span></div>
                     <p class="stat-value text-slate-900 dark:text-white" id="sales-kpi-net">R 0.00</p>
-                    <p class="text-[10px] font-bold text-slate-400 mt-1 uppercase tracking-tighter">Final Trading</p>
+                    <p class="text-[10px] font-bold text-slate-400 mt-1" id="sales-final-trading-label">Final Trading</p>
                 </div>
             </div>
 
@@ -680,13 +680,25 @@
                         <h2 class="text-xl font-black mb-8 text-center dark:text-white tracking-tighter uppercase">Revenue by Site</h2>
                         <div class="h-56"><canvas id="salesSiteChart"></canvas></div>
                     </div>
-                    <div class="p-8 bg-slate-950 text-white shadow-2xl relative overflow-hidden rounded-xl">
+                    <div class="p-8 bg-slate-950 text-white shadow-2xl relative overflow-hidden rounded-xl flex flex-col gap-8">
                         <div class="absolute -right-10 -top-10 w-32 h-32 bg-indigo-500/10 rounded-full blur-3xl"></div>
-                        <span class="info-btn absolute top-8 right-8 text-white/40 hover:text-white" onclick="salesShowInfo('efficiency')">ⓘ</span>
-                        <h2 class="text-[10px] font-black uppercase tracking-[0.2em] text-indigo-400 mb-2">Efficiency Rating</h2>
-                        <div class="flex items-baseline gap-2">
-                            <p class="text-5xl font-black tracking-tighter" id="sales-avg-transaction-value">R 0</p>
-                            <p class="text-xs font-bold text-white/50">/ Avg Sale</p>
+                        <div>
+                            <div class="flex justify-between items-center mb-2">
+                                <h2 class="text-[10px] font-black uppercase tracking-[0.2em] text-indigo-400">Efficiency Rating</h2>
+                                <span class="info-btn text-white/40 hover:text-white" onclick="salesShowInfo('efficiency')">ⓘ</span>
+                            </div>
+                            <div class="flex items-baseline gap-2">
+                                <p class="text-5xl font-black tracking-tighter" id="sales-avg-transaction-value">R 0</p>
+                                <p class="text-xs font-bold text-white/50">/ Avg Sale</p>
+                            </div>
+                        </div>
+                        <div class="pt-6 border-t border-white/10">
+                            <div class="flex justify-between items-center mb-2">
+                                <h2 class="text-[10px] font-black uppercase tracking-[0.2em] text-indigo-400">Closed Sales Total</h2>
+                                <span class="info-btn text-white/40 hover:text-white" onclick="salesShowInfo('closed-total')">ⓘ</span>
+                            </div>
+                            <p class="text-4xl font-black tracking-tighter text-indigo-300" id="sales-kpi-closed-total">R 0.00</p>
+                            <p class="text-[9px] font-bold text-white/30 uppercase tracking-tighter mt-1">Gross - Discounts - Refunds</p>
                         </div>
                     </div>
                 </div>
@@ -1522,7 +1534,8 @@
             matrix: { title: "Employee Matrix", content: "Deep audit of productivity per staff member." },
             audit: { title: "Audit Log", content: "Searchable list of every invoice." },
             opentables: { title: "Open Tables", content: "Transactions where the payment method is a dash (-), indicating the bill has not been finalized. They represent outstanding/unpaid tables grouped by order number." },
-            voids: { title: "Void Analysis", content: "Total value of line items removed from bills before or after closing." }
+            voids: { title: "Void Analysis", content: "Total value of line items removed from bills before or after closing." },
+            "closed-total": { title: "Closed Sales Total", content: "Calculated as Total Gross Sale - Total Discounts - Total Refunds. This represents the total actual revenue collected from finalized transactions." }
         };
 
         function salesShowInfo(key) {
@@ -1595,6 +1608,9 @@
             document.getElementById('sales-kpi-voids').textContent = salesFormatCurrency(t.vo);
             document.getElementById('sales-kpi-tips').textContent = salesFormatCurrency(t.tp);
             document.getElementById('sales-kpi-net').textContent = salesFormatCurrency(t.n);
+            
+            const closedTotal = t.g - t.d - t.r;
+            document.getElementById('sales-kpi-closed-total').textContent = salesFormatCurrency(closedTotal);
             
             document.getElementById('sales-kpi-count').textContent = `${data.length} Transactions`;
             document.getElementById('sales-kpi-discounts-count').textContent = `${t.dc} Applied`;
@@ -1685,11 +1701,89 @@
             const gridColor = isDark ? '#334155' : '#f1f5f9';
             const labelColor = isDark ? '#94a3b8' : '#64748b';
             Object.values(salesCharts).forEach(c => { try { c.destroy(); } catch(e){} });
-            const hourly = Array(24).fill(0);
-            data.forEach(t => { if (t.time) { const m = t.time.match(/(\d{1,2}):/); if (m) hourly[parseInt(m[1])] += t.gross; } });
+            
+            // Group data by Date and Hour
+            const dateGroups = {};
+            data.forEach(t => {
+                if (!t.time) return;
+                // Robust date parsing (YYYY-MM-DD or DD/MM/YYYY)
+                const dm = t.time.match(/(\d{4}-\d{2}-\d{2})|(\d{1,2}[-\/]\d{1,2}[-\/]\d{2,4})/);
+                const date = dm ? dm[0] : 'Unknown';
+                const tm = t.time.match(/(\d{1,2}):(\d{2})(?:\s*(AM|PM))?/i);
+                if (tm) {
+                    let h = parseInt(tm[1]);
+                    const isPM = tm[3] && tm[3].toUpperCase() === 'PM';
+                    const isAM = tm[3] && tm[3].toUpperCase() === 'AM';
+                    if (isPM && h < 12) h += 12;
+                    if (isAM && h === 12) h = 0;
+                    
+                    if (!dateGroups[date]) dateGroups[date] = Array(24).fill(0);
+                    dateGroups[date][h] += t.gross;
+                }
+            });
+            
+            const uniqueDates = Object.keys(dateGroups).sort();
+            let chartLabels = [];
+            let chartData = [];
+            
+            if (uniqueDates.length <= 1) {
+                // Single day view (Standard 24h cycle)
+                chartLabels = Array(24).fill(0).map((_, i) => `${i.toString().padStart(2, '0')}:00`);
+                chartData = uniqueDates.length ? dateGroups[uniqueDates[0]] : Array(24).fill(0);
+            } else {
+                // Multi-day view: Continuous timeline
+                uniqueDates.forEach(d => {
+                    for (let h = 0; h < 24; h++) {
+                        // Use a short label for the axis, full label for tooltip
+                        chartLabels.push({ full: `${d} ${h}:00`, short: h === 0 ? d : `${h}:00` });
+                        chartData.push(dateGroups[d][h]);
+                    }
+                });
+            }
+
             salesCharts.hourly = new Chart(document.getElementById('salesHourlyChart'), {
-                type: 'line', data: { labels: hourly.map((_, i) => `${i.toString().padStart(2, '0')}:00`), datasets: [{ data: hourly, borderColor: '#6366f1', borderWidth: 4, pointRadius: 0, fill: true, backgroundColor: 'rgba(99, 102, 241, 0.05)', tension: 0.4 }] },
-                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { grid: { color: gridColor }, border: { display: false }, ticks: { color: labelColor, font: { size: 10, weight: 'bold' } } }, x: { grid: { display: false }, ticks: { color: labelColor, font: { size: 10, weight: 'bold' } } } } }
+                type: 'line', 
+                data: { 
+                    labels: uniqueDates.length <= 1 ? chartLabels : chartLabels.map(l => l.short), 
+                    datasets: [{ 
+                        data: chartData, 
+                        borderColor: '#6366f1', 
+                        borderWidth: 3, 
+                        pointRadius: uniqueDates.length > 3 ? 0 : 2, 
+                        fill: true, 
+                        backgroundColor: 'rgba(99, 102, 241, 0.05)', 
+                        tension: 0.4 
+                    }] 
+                },
+                options: { 
+                    responsive: true, 
+                    maintainAspectRatio: false, 
+                    plugins: { 
+                        legend: { display: false },
+                        tooltip: {
+                            callbacks: {
+                                label: (context) => `Gross: ${salesFormatCurrency(context.raw)}`,
+                                title: (items) => {
+                                    if (uniqueDates.length > 1) return chartLabels[items[0].dataIndex].full;
+                                    return items[0].label;
+                                }
+                            }
+                        }
+                    }, 
+                    scales: { 
+                        y: { grid: { color: gridColor }, border: { display: false }, ticks: { color: labelColor, font: { size: 10, weight: 'bold' }, callback: val => 'R' + val } }, 
+                        x: { 
+                            grid: { display: false }, 
+                            ticks: { 
+                                color: labelColor, 
+                                font: { size: 9, weight: 'bold' },
+                                maxRotation: 0,
+                                autoSkip: true,
+                                maxTicksLimit: uniqueDates.length > 1 ? 12 : 24
+                            } 
+                        } 
+                    } 
+                }
             });
             const sites = {}; data.forEach(t => { sites[t.site] = (sites[t.site] || 0) + t.gross; });
             salesCharts.site = new Chart(document.getElementById('salesSiteChart'), {
