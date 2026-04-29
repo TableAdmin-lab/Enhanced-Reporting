@@ -2008,6 +2008,11 @@
             const totalRefunds = salesAllTransactions.reduce((a, t) => a + t.refunds, 0);
             const totalVoids = salesAllTransactions.reduce((a, t) => a + (t.voids || 0), 0);
             const totalSurcharges = salesAllTransactions.reduce((a, t) => a + (t.surcharges || 0), 0);
+            
+            const countDiscounts = salesAllTransactions.filter(t => t.discounts > 0).length;
+            const countRefunds = salesAllTransactions.filter(t => t.refunds > 0).length;
+            const countVoids = salesAllTransactions.filter(t => (t.voids || 0) > 0).length;
+
             const siteName = salesAllTransactions[0]?.site || 'Retail Store';
             const dateRangeRaw = document.getElementById('sales-report-period').textContent;
             const dateRange = dateRangeRaw.includes('Period:') ? dateRangeRaw.replace('Period: ', '') : dateRangeRaw;
@@ -2032,7 +2037,7 @@
 
             doc.setFontSize(13); doc.setTextColor(0); doc.setFont(undefined, 'bold');
             doc.text('1. Sales Summary', 14, y); y += 3;
-            doc.autoTable({ startY: y, head: [['Description', 'Qty', 'Value']], body: [['Gross Sales', String(salesAllTransactions.length), salesFormatCurrency(totalGross)], ['Total VAT', '-', salesFormatCurrency(totalVat)], ['Discounts', '-', salesFormatCurrency(totalDiscounts)], ['Refunds', '-', salesFormatCurrency(totalRefunds)], ['Voids', '-', salesFormatCurrency(totalVoids)], ['Net Sales', '-', salesFormatCurrency(totalNet)]], theme: 'striped', headStyles: { fillColor: [99, 102, 241], fontSize: 8, fontStyle: 'bold' }, bodyStyles: { fontSize: 8 }, columnStyles: { 0: { fontStyle: 'bold', cellWidth: 90 }, 1: { halign: 'center', cellWidth: 25 }, 2: { halign: 'right' } }, didParseCell: function(data) { if (data.section === 'body' && data.row.index === 5) { data.cell.styles.fontStyle = 'bold'; data.cell.styles.fillColor = [240, 240, 255]; } if (data.section === 'body' && data.column.index === 2 && data.row.index === 3) { data.cell.styles.textColor = [220, 38, 38]; } } });
+            doc.autoTable({ startY: y, head: [['Description', 'Qty', 'Value']], body: [['Gross Sales', String(salesAllTransactions.length), salesFormatCurrency(totalGross)], ['Total VAT', '-', salesFormatCurrency(totalVat)], ['Discounts', String(countDiscounts), salesFormatCurrency(totalDiscounts)], ['Refunds', String(countRefunds), salesFormatCurrency(totalRefunds)], ['Voids', String(countVoids), salesFormatCurrency(totalVoids)], ['Net Sales', String(salesAllTransactions.length), salesFormatCurrency(totalNet)]], theme: 'striped', headStyles: { fillColor: [99, 102, 241], fontSize: 8, fontStyle: 'bold' }, bodyStyles: { fontSize: 8 }, columnStyles: { 0: { fontStyle: 'bold', cellWidth: 90 }, 1: { halign: 'center', cellWidth: 25 }, 2: { halign: 'right' } }, didParseCell: function(data) { if (data.section === 'body' && data.row.index === 5) { data.cell.styles.fontStyle = 'bold'; data.cell.styles.fillColor = [240, 240, 255]; } if (data.section === 'body' && data.column.index === 2 && data.row.index === 3) { data.cell.styles.textColor = [220, 38, 38]; } } });
 
             y = doc.lastAutoTable.finalY + 10; if (y > 250) { doc.addPage(); y = 20; }
             doc.setFontSize(13); doc.setTextColor(0); doc.setFont(undefined, 'bold');
