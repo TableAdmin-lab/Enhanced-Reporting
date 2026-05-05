@@ -31,6 +31,7 @@
             --bg-black: #050507;
             --fraud-accent: #ff9d00;
             --sales-accent: #00d1ff;
+            --receipts-accent: #a78bfa;
             --glass-bg: rgba(20, 20, 25, 0.6);
             --glass-border: rgba(255, 255, 255, 0.08);
             --text-main: #ffffff;
@@ -60,6 +61,12 @@
         }
         html.dark body.spa-sales-active { background-color: #0f172a; color: #f8fafc; }
         html.light body.spa-sales-active { background-color: #f8fafc; color: #0f172a; }
+        body.spa-receipts-active {
+            display: block; overflow-y: auto; padding: 0;
+            font-family: 'Inter', sans-serif;
+        }
+        html.dark body.spa-receipts-active { background-color: #0f172a; color: #f8fafc; }
+        html.light body.spa-receipts-active { background-color: #f8fafc; color: #0f172a; }
 
         /* Sales Dashboard Styles */
         .stat-label { font-size: 11px; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.05em; }
@@ -69,6 +76,64 @@
         #view-sales .info-btn:hover { opacity: 1; color: #6366f1; transform: scale(1.1); }
         .sales-modal-backdrop { background: rgba(15, 23, 42, 0.6); backdrop-filter: blur(8px); }
         #sales-pdf-loading { display: none; position: fixed; top: 24px; right: 24px; z-index: 1000; }
+
+        /* Receipts Modal */
+        #rcpt-modal { z-index: 9999; }
+        .rcpt-modal-backdrop { background: rgba(10, 15, 30, 0.75); backdrop-filter: blur(10px); }
+        .rcpt-receipt-paper { background: #fff; color: #1a1a1a; font-family: 'Courier New', monospace; }
+        html.dark .rcpt-receipt-paper { background: #1e293b; color: #f1f5f9; }
+        .rcpt-dashed { border-top: 2px dashed #cbd5e1; }
+        html.dark .rcpt-dashed { border-color: #334155; }
+        #rcpt-pdf-progress { display:none; position:fixed; top:1.5rem; right:1.5rem; z-index:10000; background:#1e293b; color:#fff; padding:0.75rem 1.25rem; border-radius:1rem; font-size:0.75rem; font-weight:700; box-shadow:0 10px 30px rgba(0,0,0,0.4); }
+
+        /* Sticky columns for receipts table */
+        #rcpt-journal-table .col-sticky-left {
+            position: sticky; left: 0; z-index: 2;
+            background: inherit;
+        }
+        #rcpt-journal-table thead .col-sticky-left {
+            background: #f8fafc; z-index: 3;
+        }
+        html.dark #rcpt-journal-table thead .col-sticky-left {
+            background: #1e293b;
+        }
+        html.dark #rcpt-journal-table tbody tr .col-sticky-left {
+            background: #0f172a;
+        }
+        html.dark #rcpt-journal-table tbody tr:hover .col-sticky-left,
+        html.dark #rcpt-journal-table tbody tr.selected-row .col-sticky-left {
+            background: #1e2a3a;
+        }
+        #rcpt-journal-table tbody tr:hover .col-sticky-left {
+            background: #f5f3ff;
+        }
+        #rcpt-journal-table tbody tr.selected-row .col-sticky-left {
+            background: #ede9fe;
+        }
+        #rcpt-journal-table .col-sticky-right {
+            position: sticky; right: 0; z-index: 2;
+            background: inherit;
+            box-shadow: -2px 0 6px rgba(0,0,0,0.06);
+        }
+        #rcpt-journal-table thead .col-sticky-right {
+            background: #f8fafc; z-index: 3;
+        }
+        html.dark #rcpt-journal-table thead .col-sticky-right {
+            background: #1e293b;
+        }
+        html.dark #rcpt-journal-table tbody tr .col-sticky-right {
+            background: #0f172a;
+        }
+        html.dark #rcpt-journal-table tbody tr:hover .col-sticky-right,
+        html.dark #rcpt-journal-table tbody tr.selected-row .col-sticky-right {
+            background: #1e2a3a;
+        }
+        #rcpt-journal-table tbody tr:hover .col-sticky-right {
+            background: #f5f3ff;
+        }
+        #rcpt-journal-table tbody tr.selected-row .col-sticky-right {
+            background: #ede9fe;
+        }
 
         /* ─── Header ─── */
         #view-landing header { width:100%; display:flex; justify-content:space-between; align-items:center; max-width:1200px; }
@@ -140,12 +205,13 @@
         html.light .welcome-box h2 { background:linear-gradient(135deg,#1a1a1a,#444); -webkit-background-clip:text; }
 
         /* ─── Cards Layout ─── */
-        #view-landing main { flex:1; display:flex; align-items:center; justify-content:center; gap:2.5rem; width:100%; max-width:1000px; padding:1rem 0; }
-        .card { position:relative; width:400px; height:500px; background:var(--glass-bg); backdrop-filter:blur(20px); border:1px solid var(--glass-border); border-radius:2rem; padding:2rem; display:flex; flex-direction:column; justify-content:flex-end; cursor:pointer; text-decoration:none; color:inherit; overflow:hidden; transition:all 0.45s cubic-bezier(0.23,1,0.32,1); }
+        #view-landing main { flex:1; display:flex; align-items:center; justify-content:center; gap:1.8rem; width:100%; max-width:1380px; padding:1rem 0; }
+        .card { position:relative; width:340px; height:480px; background:var(--glass-bg); backdrop-filter:blur(20px); border:1px solid var(--glass-border); border-radius:2rem; padding:2rem; display:flex; flex-direction:column; justify-content:flex-end; cursor:pointer; text-decoration:none; color:inherit; overflow:hidden; transition:all 0.45s cubic-bezier(0.23,1,0.32,1); }
         .card::before { content:''; position:absolute; inset:0; border-radius:2rem; padding:1px; background:linear-gradient(160deg,rgba(255,255,255,0.12),transparent 50%); -webkit-mask:linear-gradient(#fff 0 0) content-box,linear-gradient(#fff 0 0); mask:linear-gradient(#fff 0 0) content-box,linear-gradient(#fff 0 0); -webkit-mask-composite:xor; mask-composite:exclude; pointer-events:none; }
         .card:hover { transform:translateY(-8px) scale(1.02); }
         .card.sales:hover { box-shadow:0 0 80px -15px rgba(0,209,255,0.35),0 25px 50px -12px rgba(0,0,0,0.5); border-color:rgba(0,209,255,0.3); }
         .card.fraud:hover { box-shadow:0 0 80px -15px rgba(255,157,0,0.35),0 25px 50px -12px rgba(0,0,0,0.5); border-color:rgba(255,157,0,0.3); }
+        .card.receipts:hover { box-shadow:0 0 80px -15px rgba(167,139,250,0.35),0 25px 50px -12px rgba(0,0,0,0.5); border-color:rgba(167,139,250,0.3); }
         .icon-container { position:absolute; top:1.8rem; left:1.8rem; right:1.8rem; height:240px; background:rgba(0,0,0,0.35); border:1px solid rgba(255,255,255,0.04); border-radius:1.2rem; display:flex; align-items:center; justify-content:center; overflow:hidden; }
         .icon-container::after { content:''; position:absolute; inset:0; background:radial-gradient(circle at center,transparent 40%,rgba(0,0,0,0.5) 100%); pointer-events:none; }
         .icon-container svg { width:90%; height:90%; position:relative; z-index:1; }
@@ -183,6 +249,20 @@
         @keyframes radarSpin { from{transform:rotate(0deg);} to{transform:rotate(360deg);} }
         .radar-ring { fill:none; stroke:var(--fraud-accent); opacity:0.08; }
 
+        /* ═══ RECEIPTS ANIMATION ═══ */
+        .receipt-line { stroke:var(--receipts-accent); stroke-width:1.5; opacity:0; animation:receiptDraw 0.6s ease-out forwards; }
+        .receipt-line:nth-child(1){animation-delay:0.2s;} .receipt-line:nth-child(2){animation-delay:0.5s;} .receipt-line:nth-child(3){animation-delay:0.8s;} .receipt-line:nth-child(4){animation-delay:1.1s;} .receipt-line:nth-child(5){animation-delay:1.4s;} .receipt-line:nth-child(6){animation-delay:1.7s;}
+        @keyframes receiptDraw { 0%{opacity:0;transform:scaleX(0);} 100%{opacity:0.5;transform:scaleX(1);} }
+        .receipt-doc { fill:rgba(167,139,250,0.06); stroke:rgba(167,139,250,0.2); stroke-width:1; animation:docFadeIn 1s ease-out forwards; opacity:0; }
+        @keyframes docFadeIn { 0%{opacity:0;transform:translateY(8px);} 100%{opacity:1;transform:translateY(0);} }
+        .receipt-amount { fill:var(--receipts-accent); font-family:'Inter',sans-serif; font-size:9px; font-weight:700; opacity:0; animation:amountPop 0.5s ease-out forwards; }
+        .receipt-amount:nth-child(1){animation-delay:1.0s;} .receipt-amount:nth-child(2){animation-delay:1.3s;} .receipt-amount:nth-child(3){animation-delay:1.6s;} .receipt-amount:nth-child(4){animation-delay:1.9s;}
+        @keyframes amountPop { 0%{opacity:0;} 100%{opacity:0.7;} }
+        .receipt-check { fill:none; stroke:var(--receipts-accent); stroke-width:2.5; stroke-dasharray:20; stroke-dashoffset:20; animation:checkDraw 0.6s ease-out 2.2s forwards; filter:drop-shadow(0 0 6px var(--receipts-accent)); }
+        @keyframes checkDraw { to{stroke-dashoffset:0;} }
+        .receipt-glow { fill:var(--receipts-accent); opacity:0; animation:glowPulse 3s ease-in-out 2.5s infinite; }
+        @keyframes glowPulse { 0%,100%{opacity:0;r:3;} 50%{opacity:0.4;r:7;} }
+
         /* ─── Footer ─── */
         #view-landing footer { width:100%; display:flex; flex-direction:column; align-items:center; gap:0.8rem; padding-bottom:0.5rem; }
         .progress-container { width:220px; height:3px; background:rgba(255,255,255,0.06); border-radius:2px; position:relative; }
@@ -216,8 +296,8 @@
         .back-to-portal svg { width:1rem; height:1rem; }
 
         /* ─── Responsive ─── */
-        @media (max-width:860px) {
-            body:not(.spa-fraud-active) { overflow-y:auto; padding:1rem; }
+        @media (max-width:1100px) {
+            body:not(.spa-fraud-active):not(.spa-receipts-active) { overflow-y:auto; padding:1rem; }
             #view-landing main { flex-direction:column; gap:1.5rem; }
             .card { width:340px; height:460px; }
             .card-content h2 { font-size:1.7rem; }
@@ -392,6 +472,48 @@
                     <p>Risk &amp; Anomalies</p>
                 </div>
             </a>
+
+            <!-- ═══ Receipts Journal Card ═══ -->
+            <a href="#receipts" onclick="showView('receipts'); return false;" class="card receipts">
+                <div class="icon-container">
+                    <svg viewBox="0 0 160 120">
+                        <defs>
+                            <linearGradient id="receiptsGradient" x1="0" y1="0" x2="0" y2="1">
+                                <stop offset="0%" stop-color="var(--receipts-accent)" stop-opacity="0.25"/>
+                                <stop offset="100%" stop-color="var(--receipts-accent)" stop-opacity="0"/>
+                            </linearGradient>
+                        </defs>
+                        <!-- Receipt doc 1 (back) -->
+                        <rect class="receipt-doc" x="52" y="10" width="56" height="78" rx="4" style="animation-delay:0s;"/>
+                        <!-- Receipt doc 2 (front) -->
+                        <rect class="receipt-doc" x="42" y="18" width="56" height="78" rx="4" style="animation-delay:0.15s;"/>
+                        <!-- Receipt lines -->
+                        <g transform="translate(50, 30)" style="transform-origin:0 0;">
+                            <line class="receipt-line" x1="4" y1="0" x2="36" y2="0"/>
+                            <line class="receipt-line" x1="4" y1="10" x2="30" y2="10"/>
+                            <line class="receipt-line" x1="4" y1="20" x2="36" y2="20"/>
+                            <line class="receipt-line" x1="4" y1="30" x2="26" y2="30"/>
+                            <line class="receipt-line" x1="4" y1="40" x2="36" y2="40"/>
+                            <line class="receipt-line" x1="4" y1="50" x2="20" y2="50"/>
+                        </g>
+                        <!-- Amounts on right side -->
+                        <g>
+                            <text class="receipt-amount" x="90" y="33" text-anchor="end">249</text>
+                            <text class="receipt-amount" x="90" y="43" text-anchor="end">85</text>
+                            <text class="receipt-amount" x="90" y="53" text-anchor="end">320</text>
+                            <text class="receipt-amount" x="90" y="63" text-anchor="end">60</text>
+                        </g>
+                        <!-- Checkmark circle -->
+                        <circle cx="115" cy="88" r="14" fill="rgba(167,139,250,0.12)" stroke="rgba(167,139,250,0.3)" stroke-width="1"/>
+                        <polyline class="receipt-check" points="108,88 113,94 122,82"/>
+                        <circle class="receipt-glow" cx="115" cy="88" r="3" fill="var(--receipts-accent)"/>
+                    </svg>
+                </div>
+                <div class="card-content">
+                    <h2>Receipts Journal</h2>
+                    <p>Transaction Ledger</p>
+                </div>
+            </a>
         </main>
 
         <footer>
@@ -401,8 +523,238 @@
             <div class="nav-dots">
                 <div class="dot active" onclick="scrollToCard(0)">1</div>
                 <div class="dot" onclick="scrollToCard(1)">2</div>
+                <div class="dot" onclick="scrollToCard(2)">3</div>
             </div>
         </footer>
+    </div>
+
+    <!-- ═══════════════════════════════════════════ -->
+    <!-- ═══ VIEW: RECEIPTS JOURNAL ═══              -->
+    <!-- ═══════════════════════════════════════════ -->
+    <div id="view-receipts" class="hidden">
+        <div class="max-w-7xl mx-auto p-4 md:p-8">
+            <!-- Header -->
+            <header class="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
+                <div>
+                    <h1 class="text-3xl font-bold tracking-tight dark:text-white">Receipts Journal</h1>
+                    <p class="text-slate-500 dark:text-slate-400 text-sm mt-1">Chronological ledger of all sales transactions</p>
+                    <p id="receipts-report-period" class="hidden text-sm font-bold text-violet-600 dark:text-violet-400 mt-1 uppercase tracking-tight"></p>
+                </div>
+                <div class="flex gap-3 flex-wrap">
+                    <!-- Bulk actions (shown when items selected) -->
+                    <div id="rcpt-bulk-bar" class="hidden flex items-center gap-3 bg-violet-50 dark:bg-violet-900/20 border border-violet-200 dark:border-violet-700 rounded-xl px-4 py-2">
+                        <span id="rcpt-selected-count" class="text-xs font-black text-violet-700 dark:text-violet-300 uppercase tracking-widest">0 selected</span>
+                        <button onclick="rcptBulkDownloadPDF()" class="flex items-center gap-1.5 bg-violet-600 hover:bg-violet-700 text-white px-3 py-1.5 rounded-lg text-xs font-bold transition-all">
+                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/></svg>
+                            Download Selected PDFs
+                        </button>
+                        <button onclick="rcptClearSelection()" class="text-xs font-bold text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 transition-colors">Clear</button>
+                    </div>
+                    <button onclick="receiptsExportExcel()" class="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2.5 rounded-xl text-xs font-bold uppercase tracking-wide transition-all shadow-sm">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                        Export Excel
+                    </button>
+
+                </div>
+            </header>
+
+            <!-- Welcome / empty state -->
+            <div id="receipts-welcome" class="text-center py-24">
+                <div class="w-20 h-20 bg-violet-100 dark:bg-violet-900/20 rounded-2xl flex items-center justify-center mx-auto mb-6">
+                    <svg class="w-10 h-10 text-violet-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                </div>
+                <h2 class="text-2xl font-black text-slate-900 dark:text-white mb-2">No Data Loaded</h2>
+                <p class="text-slate-500 dark:text-slate-400 text-sm">Import a sales report from the portal to view the receipts journal.</p>
+            </div>
+
+            <!-- Main content (hidden until data loaded) -->
+            <div id="receipts-main" class="hidden">
+                <!-- KPI Summary Row -->
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+                    <div class="bg-white dark:bg-darkCard rounded-2xl p-5 border border-slate-100 dark:border-darkBorder shadow-sm">
+                        <p class="stat-label">Total Receipts</p>
+                        <p class="stat-value text-violet-600 dark:text-violet-400" id="rcpt-kpi-count">—</p>
+                        <p class="text-xs text-slate-400 mt-1">Transactions</p>
+                    </div>
+                    <div class="bg-white dark:bg-darkCard rounded-2xl p-5 border border-slate-100 dark:border-darkBorder shadow-sm">
+                        <p class="stat-label">Gross Revenue</p>
+                        <p class="stat-value" id="rcpt-kpi-gross">—</p>
+                        <p class="text-xs text-slate-400 mt-1">Before deductions</p>
+                    </div>
+                    <div class="bg-white dark:bg-darkCard rounded-2xl p-5 border border-slate-100 dark:border-darkBorder shadow-sm">
+                        <p class="stat-label">Total VAT</p>
+                        <p class="stat-value text-amber-600 dark:text-amber-400" id="rcpt-kpi-vat">—</p>
+                        <p class="text-xs text-slate-400 mt-1">Collected</p>
+                    </div>
+                    <div class="bg-white dark:bg-darkCard rounded-2xl p-5 border border-slate-100 dark:border-darkBorder shadow-sm">
+                        <p class="stat-label">Net Revenue</p>
+                        <p class="stat-value text-emerald-600 dark:text-emerald-400" id="rcpt-kpi-net">—</p>
+                        <p class="text-xs text-slate-400 mt-1">After VAT &amp; deductions</p>
+                    </div>
+                </div>
+
+                <!-- Filters bar -->
+                <div class="bg-white dark:bg-darkCard rounded-2xl p-5 border border-slate-100 dark:border-darkBorder shadow-sm mb-6 flex flex-col md:flex-row gap-4 items-center">
+                    <div class="relative flex-1 w-full">
+                        <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+                        <input id="rcpt-search" type="text" placeholder="Search invoice, staff, method..." class="w-full pl-9 pr-4 py-2.5 border dark:border-darkBorder rounded-xl text-sm bg-slate-50 dark:bg-slate-800 dark:text-white focus:ring-2 focus:ring-violet-500 outline-none"/>
+                    </div>
+                    <div class="flex gap-3 flex-wrap">
+                        <select id="rcpt-filter-emp" class="bg-slate-50 dark:bg-slate-800 dark:text-white border dark:border-darkBorder rounded-xl px-3 py-2.5 text-xs font-bold focus:ring-2 focus:ring-violet-500 outline-none">
+                            <option value="">All Staff</option>
+                        </select>
+                        <select id="rcpt-filter-method" class="bg-slate-50 dark:bg-slate-800 dark:text-white border dark:border-darkBorder rounded-xl px-3 py-2.5 text-xs font-bold focus:ring-2 focus:ring-violet-500 outline-none">
+                            <option value="">All Methods</option>
+                        </select>
+                        <select id="rcpt-rows-per-page" class="bg-slate-50 dark:bg-slate-800 dark:text-white border dark:border-darkBorder rounded-xl px-3 py-2.5 text-xs font-bold focus:ring-2 focus:ring-violet-500 outline-none">
+                            <option value="25" selected>25 rows</option>
+                            <option value="50">50 rows</option>
+                            <option value="100">100 rows</option>
+                            <option value="9999">All</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Ledger Table -->
+                <div class="bg-white dark:bg-darkCard rounded-2xl border border-slate-100 dark:border-darkBorder shadow-sm overflow-hidden mb-6">
+                    <div class="p-5 border-b dark:border-darkBorder flex justify-between items-center">
+                        <h2 class="text-base font-black text-slate-900 dark:text-white uppercase tracking-tighter">Transaction Ledger</h2>
+                        <span id="rcpt-count-label" class="text-xs text-slate-400 font-medium"></span>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table id="rcpt-journal-table" class="w-full text-sm text-left">
+                            <thead class="bg-slate-50 dark:bg-slate-800/60 text-[10px] font-black uppercase tracking-widest text-slate-500 dark:text-slate-400">
+                                <tr>
+                                    <th class="px-4 py-4 w-10 col-sticky-left"><input type="checkbox" id="rcpt-select-all" class="rounded border-slate-300 dark:border-slate-600 text-violet-600 focus:ring-violet-500" title="Select all on page"/></th>
+                                    <th class="px-3 py-4 w-8">#</th>
+                                    <th class="px-4 py-4">Invoice</th>
+                                    <th class="px-4 py-4">Order</th>
+                                    <th class="px-4 py-4">Date / Time</th>
+                                    <th class="px-4 py-4">Staff</th>
+                                    <th class="px-4 py-4">Site</th>
+                                    <th class="px-4 py-4">Method</th>
+                                    <th class="px-4 py-4 text-right">Gross</th>
+                                    <th class="px-4 py-4 text-right">VAT</th>
+                                    <th class="px-4 py-4 text-right">Disc</th>
+                                    <th class="px-4 py-4 text-right">Tip</th>
+                                    <th class="px-4 py-4 text-right">Net</th>
+                                    <th class="px-4 py-4 text-center col-sticky-right">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="rcpt-table-body" class="divide-y dark:divide-darkBorder"></tbody>
+                        </table>
+                    </div>
+                    <!-- Totals footer -->
+                    <div id="rcpt-totals-row" class="hidden p-5 border-t dark:border-darkBorder bg-slate-50 dark:bg-slate-800/40">
+                        <div class="flex flex-wrap gap-6 text-xs font-black uppercase tracking-widest">
+                            <span class="text-slate-400">Page Totals:</span>
+                            <span>Gross: <span id="rcpt-page-gross" class="text-slate-800 dark:text-white ml-1">—</span></span>
+                            <span>VAT: <span id="rcpt-page-vat" class="text-amber-600 dark:text-amber-400 ml-1">—</span></span>
+                            <span>Discounts: <span id="rcpt-page-disc" class="text-rose-500 ml-1">—</span></span>
+                            <span>Tips: <span id="rcpt-page-tips" class="text-emerald-500 ml-1">—</span></span>
+                            <span>Net: <span id="rcpt-page-net" class="text-violet-600 dark:text-violet-400 ml-1">—</span></span>
+                        </div>
+                    </div>
+                    <!-- Pagination -->
+                    <div id="rcpt-pagination" class="hidden p-5 border-t dark:border-darkBorder flex justify-between items-center bg-slate-50/50 dark:bg-slate-800/20">
+                        <button id="rcpt-prev" class="p-2 border dark:border-darkBorder rounded-xl hover:bg-white dark:hover:bg-slate-700 transition-all shadow-sm"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg></button>
+                        <span id="rcpt-page-indicator" class="text-xs font-black text-slate-500 uppercase">Page 1 of 1</span>
+                        <button id="rcpt-next" class="p-2 border dark:border-darkBorder rounded-xl hover:bg-white dark:hover:bg-slate-700 transition-all shadow-sm"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg></button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Back to Portal Button -->
+        <button onclick="showView('landing')" class="back-to-portal">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/></svg>
+            Back to Portal
+        </button>
+    </div>
+
+    <!-- PDF Progress Toast -->
+    <div id="rcpt-pdf-progress">⏳ Generating PDFs... <span id="rcpt-pdf-progress-text">0 / 0</span></div>
+
+    <!-- ═══ RECEIPT VIEWER MODAL ═══ -->
+    <div id="rcpt-modal" class="fixed inset-0 hidden flex items-center justify-center p-4" style="z-index:9999;">
+        <div class="rcpt-modal-backdrop absolute inset-0" onclick="rcptCloseModal()"></div>
+        <div class="relative w-full max-w-md mx-auto flex flex-col" style="max-height:90vh;">
+            <!-- Modal card -->
+            <div class="rcpt-receipt-paper rounded-2xl shadow-2xl flex flex-col overflow-hidden" style="max-height:90vh;">
+                <!-- Header strip -->
+                <div class="bg-violet-600 text-white px-6 py-5 flex justify-between items-start flex-shrink-0">
+                    <div>
+                        <p class="text-[10px] font-black uppercase tracking-[0.2em] opacity-70 mb-1">Receipt</p>
+                        <h3 class="text-xl font-black tracking-tighter" id="rcpt-modal-inv">—</h3>
+                        <p class="text-xs opacity-70 mt-1" id="rcpt-modal-subtitle">—</p>
+                    </div>
+                    <div class="flex gap-2 flex-shrink-0">
+                        <button onclick="rcptDownloadCurrentPDF()" class="bg-white/20 hover:bg-white/30 text-white p-2 rounded-xl transition-all" title="Download PDF">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/></svg>
+                        </button>
+                        <button onclick="rcptCloseModal()" class="bg-white/20 hover:bg-white/30 text-white p-2 rounded-xl transition-all" title="Close">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Scrollable body -->
+                <div class="overflow-y-auto flex-1 px-6 py-5 font-mono text-sm">
+                    <!-- Meta row -->
+                    <div class="grid grid-cols-2 gap-3 text-xs mb-5">
+                        <div><p class="text-slate-500 uppercase tracking-widest text-[9px] font-black mb-0.5">Order #</p><p class="font-bold" id="rcpt-modal-order">—</p></div>
+                        <div><p class="text-slate-500 uppercase tracking-widest text-[9px] font-black mb-0.5">Date / Time</p><p class="font-bold" id="rcpt-modal-time">—</p></div>
+                        <div><p class="text-slate-500 uppercase tracking-widest text-[9px] font-black mb-0.5">Cashier</p><p class="font-bold" id="rcpt-modal-emp">—</p></div>
+                        <div><p class="text-slate-500 uppercase tracking-widest text-[9px] font-black mb-0.5">Site</p><p class="font-bold" id="rcpt-modal-site">—</p></div>
+                        <div class="col-span-2"><p class="text-slate-500 uppercase tracking-widest text-[9px] font-black mb-0.5">Payment Method</p><p class="font-bold" id="rcpt-modal-method">—</p></div>
+                    </div>
+
+                    <div class="rcpt-dashed mb-4"></div>
+
+                    <!-- Line items -->
+                    <table class="w-full text-xs mb-4">
+                        <thead>
+                            <tr class="text-slate-400 text-[9px] uppercase tracking-widest">
+                                <th class="text-left pb-2 font-black">Item</th>
+                                <th class="text-center pb-2 font-black w-8">Qty</th>
+                                <th class="text-right pb-2 font-black w-20">Unit</th>
+                                <th class="text-right pb-2 font-black w-20">Total</th>
+                            </tr>
+                        </thead>
+                        <tbody id="rcpt-modal-items" class="divide-y divide-slate-100 dark:divide-slate-700"></tbody>
+                    </table>
+
+                    <div class="rcpt-dashed mb-4"></div>
+
+                    <!-- Totals block -->
+                    <div class="space-y-1.5 text-xs mb-5">
+                        <div class="flex justify-between"><span class="text-slate-500">Gross Sale</span><span class="font-bold" id="rcpt-modal-gross">—</span></div>
+                        <div class="flex justify-between"><span class="text-slate-500">VAT</span><span class="font-bold text-amber-600" id="rcpt-modal-vat">—</span></div>
+                        <div class="flex justify-between" id="rcpt-modal-disc-row"><span class="text-slate-500">Discount</span><span class="font-bold text-rose-500" id="rcpt-modal-disc">—</span></div>
+                        <div class="flex justify-between" id="rcpt-modal-tip-row"><span class="text-slate-500">Tip</span><span class="font-bold text-emerald-600" id="rcpt-modal-tip">—</span></div>
+                        <div class="flex justify-between" id="rcpt-modal-refund-row"><span class="text-slate-500">Refunds</span><span class="font-bold text-rose-600" id="rcpt-modal-refund">—</span></div>
+                    </div>
+
+                    <div class="rcpt-dashed mb-4"></div>
+
+                    <div class="flex justify-between items-center">
+                        <span class="text-sm font-black uppercase tracking-widest">NET TOTAL</span>
+                        <span class="text-2xl font-black text-violet-600 dark:text-violet-400" id="rcpt-modal-net">—</span>
+                    </div>
+
+                    <p class="text-center text-[9px] text-slate-400 uppercase tracking-[0.2em] mt-6 font-bold">Thank you for your business</p>
+                </div>
+
+                <!-- Footer actions -->
+                <div class="px-6 py-4 border-t border-slate-200 dark:border-slate-700 flex gap-3 flex-shrink-0">
+                    <button onclick="rcptDownloadCurrentPDF()" class="flex-1 flex items-center justify-center gap-2 bg-violet-600 hover:bg-violet-700 text-white py-2.5 rounded-xl text-xs font-black uppercase tracking-wide transition-all">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/></svg>
+                        Download PDF
+                    </button>
+                    <button onclick="rcptCloseModal()" class="px-4 py-2.5 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-black uppercase tracking-wide hover:bg-slate-50 dark:hover:bg-slate-800 transition-all">Close</button>
+                </div>
+            </div>
+        </div>
     </div>
 
     <!-- ═══════════════════════════════════════════ -->
@@ -894,11 +1246,13 @@
             const landing = document.getElementById('view-landing');
             const fraud = document.getElementById('view-fraud');
             const sales = document.getElementById('view-sales');
+            const receipts = document.getElementById('view-receipts');
             // Hide all views
             landing.classList.add('hidden');
             fraud.classList.add('hidden');
             sales.classList.add('hidden');
-            document.body.classList.remove('spa-fraud-active', 'spa-sales-active');
+            receipts.classList.add('hidden');
+            document.body.classList.remove('spa-fraud-active', 'spa-sales-active', 'spa-receipts-active');
             if (view === 'fraud') {
                 fraud.classList.remove('hidden');
                 document.body.classList.add('spa-fraud-active');
@@ -908,6 +1262,10 @@
                 document.body.classList.add('spa-sales-active');
                 await salesCheckSharedData();
                 if (salesAllTransactions.length > 0) salesRenderCharts(salesAllTransactions);
+            } else if (view === 'receipts') {
+                receipts.classList.remove('hidden');
+                document.body.classList.add('spa-receipts-active');
+                await receiptsCheckSharedData();
             } else {
                 landing.classList.remove('hidden');
             }
@@ -1105,6 +1463,7 @@
                 await updateImportState();
                 if (window.location.hash === '#fraud') await checkSharedData();
                 if (window.location.hash === '#sales') await salesCheckSharedData();
+                if (window.location.hash === '#receipts') await receiptsCheckSharedData();
             }
         };
 
@@ -2075,6 +2434,439 @@
             doc.save(`End_of_Day_Summary_${siteName.replace(/\s+/g, '_')}_${dateStr.replace(/\//g, '-')}.pdf`);
             loading.style.display = 'none';
         }
+        // ═══════════════════════════════════════════
+        // ═══ RECEIPTS JOURNAL LOGIC ═══
+        // ═══════════════════════════════════════════
+        let receiptsAllTransactions = [];
+        let receiptsFiltered = [];
+        let receiptsPage = 1;
+        let receiptsRowsPerPage = 25;
+        let receiptsSelected = new Set();
+        let receiptsItemized = [];
+        let rcptCurrentInv = null;
+        const rcptFmt = new Intl.NumberFormat('en-ZA', { style: 'currency', currency: 'ZAR' });
+
+        function rcptFormatCurrency(v) { return rcptFmt.format(isNaN(v) ? 0 : v); }
+
+        async function receiptsCheckSharedData() {
+            const data = await localforage.getItem('yoco_portal_data');
+            if (data && data.sales && data.sales.length) {
+                receiptsItemized = data.items || [];
+                receiptsLoadFromSales(data.sales, data.info);
+            } else {
+                document.getElementById('receipts-welcome').classList.remove('hidden');
+                document.getElementById('receipts-main').classList.add('hidden');
+            }
+        }
+
+        function receiptsLoadFromSales(sales, info) {
+            receiptsAllTransactions = sales.map(row => {
+                const disc = parseFloat(row['Discount (Other)'] || 0) + parseFloat(row['Discount (Munch)'] || 0) + parseFloat(row['Discount'] || 0);
+                const billTotal = row['Bill Total'] !== undefined ? parseFloat(row['Bill Total']) : (parseFloat(row['Gross Sale Amount'] || 0) - disc);
+                let methodsStr = String(row['Payment Methods'] || row['Method'] || 'Other');
+                let statusStr = String(row['Status'] || row['Bill Status'] || '');
+                if ((methodsStr.trim() === '-' || methodsStr.trim() === '—' || methodsStr.trim() === '') && statusStr.toLowerCase() === 'closed') {
+                    methodsStr = 'Closed (Zero Value)';
+                }
+                return {
+                    inv: row['Invoice Number'] || row['Invoice'] || '',
+                    orderNum: row['Order Number'] || row['Order'] || '',
+                    emp: row['Employee Name'] || row['Employee'] || '',
+                    site: row['Site'] || '',
+                    time: row['Bill Invoice Time'] || row['Time'] || '',
+                    method: methodsStr,
+                    gross: parseFloat(row['Gross Sale Amount'] || row['Bill Total'] || 0),
+                    billTotal,
+                    vat: parseFloat(row['Total VAT'] || row['Total Tax'] || 0),
+                    discounts: disc,
+                    tip: parseFloat(row['Tip'] || row['Total Tip'] || 0),
+                    refunds: parseFloat(row['Refunds Total'] || row['Total Refunds'] || 0),
+                    net: parseFloat(row['Net Sale Amount'] || 0),
+                };
+            }).filter(t => t.inv);
+
+            // Sort by time (most recent first)
+            receiptsAllTransactions.sort((a, b) => {
+                const ta = a.time ? new Date(a.time.replace(/(\d{2})\/(\d{2})\/(\d{4})/, '$3-$2-$1')) : 0;
+                const tb = b.time ? new Date(b.time.replace(/(\d{2})\/(\d{2})\/(\d{4})/, '$3-$2-$1')) : 0;
+                return tb - ta;
+            });
+            receiptsFiltered = [...receiptsAllTransactions];
+            receiptsPage = 1;
+            receiptsSelected.clear();
+
+            // Populate KPIs
+            const t = receiptsAllTransactions.reduce((acc, r) => {
+                acc.g += r.gross; acc.v += r.vat; acc.d += r.discounts; acc.tp += r.tip; acc.n += r.net; return acc;
+            }, { g:0, v:0, d:0, tp:0, n:0 });
+            document.getElementById('rcpt-kpi-count').textContent = receiptsAllTransactions.length.toLocaleString();
+            document.getElementById('rcpt-kpi-gross').textContent = rcptFormatCurrency(t.g);
+            document.getElementById('rcpt-kpi-vat').textContent = rcptFormatCurrency(t.v);
+            document.getElementById('rcpt-kpi-net').textContent = rcptFormatCurrency(t.n);
+
+            // Populate filter dropdowns
+            const emps = [...new Set(receiptsAllTransactions.map(r => r.emp).filter(Boolean))].sort();
+            const methods = [...new Set(receiptsAllTransactions.map(r => r.method.split(',')[0].trim()).filter(Boolean))].sort();
+            const empSel = document.getElementById('rcpt-filter-emp');
+            const mSel = document.getElementById('rcpt-filter-method');
+            empSel.innerHTML = '<option value="">All Staff</option>' + emps.map(e => `<option value="${e}">${e}</option>`).join('');
+            mSel.innerHTML = '<option value="">All Methods</option>' + methods.map(m => `<option value="${m}">${m}</option>`).join('');
+
+            // Report period
+            if (info) {
+                const range = info.find(r => r[0] === 'Date Range');
+                if (range) {
+                    const el = document.getElementById('receipts-report-period');
+                    el.textContent = `Report Period: ${range[1]}`;
+                    el.classList.remove('hidden');
+                }
+            }
+
+            document.getElementById('receipts-welcome').classList.add('hidden');
+            document.getElementById('receipts-main').classList.remove('hidden');
+            receiptsRender();
+        }
+
+        function receiptsApplyFilters() {
+            const search = (document.getElementById('rcpt-search').value || '').toLowerCase();
+            const emp = document.getElementById('rcpt-filter-emp').value;
+            const method = document.getElementById('rcpt-filter-method').value;
+            receiptsFiltered = receiptsAllTransactions.filter(r => {
+                const matchSearch = !search || r.inv.toLowerCase().includes(search) || r.emp.toLowerCase().includes(search) || r.method.toLowerCase().includes(search) || (r.orderNum || '').toLowerCase().includes(search);
+                const matchEmp = !emp || r.emp === emp;
+                const matchMethod = !method || r.method.split(',')[0].trim() === method;
+                return matchSearch && matchEmp && matchMethod;
+            });
+            receiptsPage = 1;
+            receiptsRender();
+        }
+
+        function receiptsRender() {
+            const total = receiptsFiltered.length;
+            const pages = Math.ceil(total / receiptsRowsPerPage) || 1;
+            const start = (receiptsPage - 1) * receiptsRowsPerPage;
+            const subset = receiptsFiltered.slice(start, start + receiptsRowsPerPage);
+
+            document.getElementById('rcpt-count-label').textContent = `Showing ${total === 0 ? 0 : start + 1}–${Math.min(start + receiptsRowsPerPage, total)} of ${total} records`;
+            document.getElementById('rcpt-page-indicator').textContent = `Page ${receiptsPage} of ${pages}`;
+            document.getElementById('rcpt-pagination').classList.toggle('hidden', total === 0);
+            document.getElementById('rcpt-prev').disabled = receiptsPage === 1;
+            document.getElementById('rcpt-next').disabled = receiptsPage === pages;
+
+            const pt = subset.reduce((a, r) => { a.g += r.gross; a.v += r.vat; a.d += r.discounts; a.tp += r.tip; a.n += r.net; return a; }, {g:0,v:0,d:0,tp:0,n:0});
+            document.getElementById('rcpt-page-gross').textContent = rcptFormatCurrency(pt.g);
+            document.getElementById('rcpt-page-vat').textContent = rcptFormatCurrency(pt.v);
+            document.getElementById('rcpt-page-disc').textContent = rcptFormatCurrency(pt.d);
+            document.getElementById('rcpt-page-tips').textContent = rcptFormatCurrency(pt.tp);
+            document.getElementById('rcpt-page-net').textContent = rcptFormatCurrency(pt.n);
+            document.getElementById('rcpt-totals-row').classList.toggle('hidden', total === 0);
+
+            // Select-all checkbox state
+            const pageInvs = subset.map(r => r.inv);
+            const allPageSelected = pageInvs.length > 0 && pageInvs.every(inv => receiptsSelected.has(inv));
+            const selAll = document.getElementById('rcpt-select-all');
+            selAll.checked = allPageSelected;
+            selAll.indeterminate = !allPageSelected && pageInvs.some(inv => receiptsSelected.has(inv));
+
+            const tbody = document.getElementById('rcpt-table-body');
+            tbody.innerHTML = subset.map((r, i) => {
+                const rowNum = start + i + 1;
+                const isChecked = receiptsSelected.has(r.inv);
+                const safeInv = r.inv.replace(/\\/g, '\\\\').replace(/'/g, "\\'");
+                const methodBadge = r.method.split(',').map(m => {
+                    const mt = m.trim();
+                    const color = mt.toLowerCase().includes('cash') ? 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400'
+                        : mt.toLowerCase().includes('card') || mt.toLowerCase().includes('credit') || mt.toLowerCase().includes('debit') ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400'
+                        : 'bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300';
+                    return `<span class="inline-block px-2 py-0.5 rounded-lg text-[10px] font-bold ${color}">${mt}</span>`;
+                }).join(' ');
+                return `<tr class="hover:bg-violet-50/30 dark:hover:bg-violet-900/10 transition-colors ${isChecked ? 'bg-violet-50/50 dark:bg-violet-900/20 selected-row' : ''}">
+                    <td class="px-4 py-3 col-sticky-left"><input type="checkbox" data-inv="${r.inv}" class="rcpt-row-check rounded border-slate-300 dark:border-slate-600 text-violet-600 focus:ring-violet-500 cursor-pointer" ${isChecked ? 'checked' : ''}/></td>
+                    <td class="px-3 py-3 text-xs text-slate-400 font-mono">${rowNum}</td>
+                    <td class="px-4 py-3 font-black text-violet-600 dark:text-violet-400 text-sm tracking-tighter whitespace-nowrap">${r.inv}</td>
+                    <td class="px-4 py-3 font-mono text-xs text-slate-400 whitespace-nowrap">${r.orderNum || '—'}</td>
+                    <td class="px-4 py-3 text-xs text-slate-500 dark:text-slate-400 whitespace-nowrap">${r.time || '—'}</td>
+                    <td class="px-4 py-3 text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-tight whitespace-nowrap">${r.emp || '—'}</td>
+                    <td class="px-4 py-3 text-xs text-slate-500 dark:text-slate-400 whitespace-nowrap">${r.site || '—'}</td>
+                    <td class="px-4 py-3">${methodBadge}</td>
+                    <td class="px-4 py-3 text-right font-bold text-slate-800 dark:text-white text-sm whitespace-nowrap">${rcptFormatCurrency(r.gross)}</td>
+                    <td class="px-4 py-3 text-right text-xs text-amber-600 dark:text-amber-400 whitespace-nowrap">${rcptFormatCurrency(r.vat)}</td>
+                    <td class="px-4 py-3 text-right text-xs text-rose-500 whitespace-nowrap">${r.discounts > 0 ? '-' + rcptFormatCurrency(r.discounts) : '—'}</td>
+                    <td class="px-4 py-3 text-right text-xs text-emerald-600 dark:text-emerald-400 whitespace-nowrap">${r.tip > 0 ? rcptFormatCurrency(r.tip) : '—'}</td>
+                    <td class="px-4 py-3 text-right font-black text-violet-700 dark:text-violet-300 whitespace-nowrap">${rcptFormatCurrency(r.net)}</td>
+                    <td class="px-4 py-3 col-sticky-right">
+                        <div class="flex items-center justify-center gap-1.5">
+                            <button onclick="rcptViewReceipt('${safeInv}')" class="p-2 bg-violet-50 dark:bg-violet-900/30 text-violet-600 dark:text-violet-400 rounded-xl hover:bg-violet-600 hover:text-white transition-all shadow-sm" title="View Receipt">
+                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+                            </button>
+                            <button onclick="rcptDownloadSinglePDF('${safeInv}')" class="p-2 bg-slate-50 dark:bg-slate-700 text-slate-600 dark:text-slate-300 rounded-xl hover:bg-violet-600 hover:text-white transition-all shadow-sm" title="Download PDF">
+                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/></svg>
+                            </button>
+                        </div>
+                    </td>
+                </tr>`;
+            }).join('');
+
+            // Attach row checkbox listeners after render
+            document.querySelectorAll('.rcpt-row-check').forEach(cb => {
+                cb.addEventListener('change', function() {
+                    if (this.checked) receiptsSelected.add(this.dataset.inv);
+                    else receiptsSelected.delete(this.dataset.inv);
+                    rcptUpdateSelectionUI();
+                    const allSel = pageInvs.every(i => receiptsSelected.has(i));
+                    selAll.checked = allSel;
+                    selAll.indeterminate = !allSel && pageInvs.some(i => receiptsSelected.has(i));
+                    // Re-stripe the row
+                    const row = this.closest('tr');
+                    if (this.checked) { row.classList.add('bg-violet-50/50', 'dark:bg-violet-900/20', 'selected-row'); }
+                    else { row.classList.remove('bg-violet-50/50', 'dark:bg-violet-900/20', 'selected-row'); }
+                });
+            });
+        }
+
+        function rcptUpdateSelectionUI() {
+            const count = receiptsSelected.size;
+            const bar = document.getElementById('rcpt-bulk-bar');
+            if (count > 0) { bar.classList.remove('hidden'); document.getElementById('rcpt-selected-count').textContent = `${count} selected`; }
+            else bar.classList.add('hidden');
+        }
+
+        function rcptClearSelection() {
+            receiptsSelected.clear();
+            rcptUpdateSelectionUI();
+            receiptsRender();
+        }
+
+        // ─── RECEIPT VIEWER MODAL ───
+        function rcptViewReceipt(inv) {
+            const txn = receiptsAllTransactions.find(t => t.inv === inv);
+            if (!txn) return;
+            rcptCurrentInv = inv;
+
+            document.getElementById('rcpt-modal-inv').textContent = inv;
+            document.getElementById('rcpt-modal-subtitle').textContent = [txn.site, txn.time].filter(Boolean).join('  •  ');
+            document.getElementById('rcpt-modal-order').textContent = txn.orderNum || '—';
+            document.getElementById('rcpt-modal-time').textContent = txn.time || '—';
+            document.getElementById('rcpt-modal-emp').textContent = txn.emp || '—';
+            document.getElementById('rcpt-modal-site').textContent = txn.site || '—';
+            document.getElementById('rcpt-modal-method').textContent = txn.method || '—';
+            document.getElementById('rcpt-modal-gross').textContent = rcptFormatCurrency(txn.gross);
+            document.getElementById('rcpt-modal-vat').textContent = rcptFormatCurrency(txn.vat);
+            document.getElementById('rcpt-modal-net').textContent = rcptFormatCurrency(txn.net);
+
+            const discRow = document.getElementById('rcpt-modal-disc-row');
+            const tipRow  = document.getElementById('rcpt-modal-tip-row');
+            const refRow  = document.getElementById('rcpt-modal-refund-row');
+            if (txn.discounts > 0) { discRow.classList.remove('hidden'); document.getElementById('rcpt-modal-disc').textContent = '-' + rcptFormatCurrency(txn.discounts); } else discRow.classList.add('hidden');
+            if (txn.tip > 0)       { tipRow.classList.remove('hidden');  document.getElementById('rcpt-modal-tip').textContent  = rcptFormatCurrency(txn.tip);              } else tipRow.classList.add('hidden');
+            if (txn.refunds > 0)   { refRow.classList.remove('hidden');  document.getElementById('rcpt-modal-refund').textContent = '-' + rcptFormatCurrency(txn.refunds); } else refRow.classList.add('hidden');
+
+            // Line items — try invoice match first, then order+emp
+            let items = receiptsItemized.filter(r => (r['Invoice Number'] || r['Invoice'] || '') === inv);
+            if (items.length === 0 && txn.orderNum) {
+                items = receiptsItemized.filter(r =>
+                    (r['Order Number'] || r['Order'] || '') === txn.orderNum &&
+                    (r['Employee Name'] || r['Employee'] || '') === txn.emp
+                );
+            }
+            document.getElementById('rcpt-modal-items').innerHTML = items.length > 0
+                ? items.map(i => {
+                    const status = (i['Status'] || '').toLowerCase();
+                    const isVoid = status.includes('void') || status.includes('return') || status.includes('scrap');
+                    return `<tr class="${isVoid ? 'opacity-50' : ''}">
+                        <td class="py-2 pr-2 text-xs font-semibold ${isVoid ? 'line-through text-rose-400' : ''}">${i.Product || 'Item'}${isVoid ? ' <span style="text-decoration:none" class="text-[8px] bg-rose-500 text-white px-1 rounded font-black not-italic">VOID</span>' : ''}</td>
+                        <td class="py-2 text-center text-xs text-slate-500">${i.Quantity || 1}</td>
+                        <td class="py-2 text-right text-xs text-slate-500">${rcptFormatCurrency(parseFloat(i['Item Price'] || 0))}</td>
+                        <td class="py-2 text-right text-xs font-bold">${rcptFormatCurrency(parseFloat(i['Item Total'] || 0))}</td>
+                    </tr>`;
+                }).join('')
+                : `<tr><td colspan="4" class="py-8 text-center text-slate-400 text-[10px] uppercase tracking-widest font-bold">No itemized data available</td></tr>`;
+
+            document.getElementById('rcpt-modal').classList.remove('hidden');
+            document.body.style.overflow = 'hidden';
+        }
+
+        function rcptCloseModal() {
+            document.getElementById('rcpt-modal').classList.add('hidden');
+            document.body.style.overflow = '';
+            rcptCurrentInv = null;
+        }
+
+        // ─── PDF ENGINE ───
+        function rcptBuildPDF(doc, txn, siteName) {
+            const purple = [109, 40, 217];
+            const lightPurple = [237, 233, 254];
+            const pw = doc.internal.pageSize.getWidth();
+            let y = 0;
+
+            // Header band
+            doc.setFillColor(...purple);
+            doc.rect(0, 0, pw, 36, 'F');
+            doc.setTextColor(255, 255, 255);
+            doc.setFontSize(16); doc.setFont(undefined, 'bold');
+            doc.text('RECEIPT', 12, 14);
+            doc.setFontSize(8); doc.setFont(undefined, 'normal');
+            doc.text(siteName, 12, 21);
+            doc.setFontSize(10); doc.setFont(undefined, 'bold');
+            doc.text(txn.inv, pw - 12, 14, { align: 'right' });
+            doc.setFontSize(7.5); doc.setFont(undefined, 'normal');
+            doc.text(txn.time || '—', pw - 12, 21, { align: 'right' });
+
+            y = 44;
+            doc.setTextColor(0, 0, 0); doc.setFontSize(7.5);
+
+            // Meta grid (2-col)
+            const meta = [['Cashier', txn.emp || '—'], ['Order #', txn.orderNum || '—'], ['Site', txn.site || '—'], ['Payment', (txn.method || '').substring(0, 28)]];
+            meta.forEach(([k, v], idx) => {
+                const col = idx % 2 === 0 ? 12 : pw / 2 + 4;
+                if (idx % 2 === 0 && idx > 0) y += 13;
+                doc.setTextColor(130, 130, 130); doc.setFont(undefined, 'bold'); doc.text(k.toUpperCase(), col, y);
+                doc.setTextColor(20, 20, 20); doc.setFont(undefined, 'normal'); doc.text(String(v), col, y + 5);
+            });
+            y += 17;
+
+            // Dashed separator
+            doc.setDrawColor(200, 200, 200); doc.setLineDashPattern([1.5, 1.5], 0);
+            doc.line(12, y, pw - 12, y); y += 6; doc.setLineDashPattern([], 0);
+
+            // Line items table
+            const items = receiptsItemized.filter(r =>
+                (r['Invoice Number'] || r['Invoice'] || '') === txn.inv ||
+                (txn.orderNum && (r['Order Number'] || r['Order'] || '') === txn.orderNum && (r['Employee Name'] || r['Employee'] || '') === txn.emp)
+            );
+
+            if (items.length > 0) {
+                doc.setFontSize(6.5); doc.setTextColor(130, 130, 130); doc.setFont(undefined, 'bold');
+                doc.text('DESCRIPTION', 12, y); doc.text('QTY', pw - 55, y, {align:'center'}); doc.text('UNIT', pw - 35, y, {align:'right'}); doc.text('TOTAL', pw - 12, y, {align:'right'});
+                y += 3; doc.setDrawColor(210, 210, 210); doc.line(12, y, pw - 12, y); y += 4;
+                doc.setFont(undefined, 'normal'); doc.setFontSize(7.5);
+                items.forEach(i => {
+                    const status = (i['Status'] || '').toLowerCase();
+                    const isVoid = status.includes('void') || status.includes('return') || status.includes('scrap');
+                    doc.setTextColor(isVoid ? 180 : 20, isVoid ? 40 : 20, isVoid ? 40 : 20);
+                    const name = (i.Product || 'Item').substring(0, 32) + (isVoid ? ' [VOID]' : '');
+                    doc.text(name, 12, y);
+                    doc.text(String(i.Quantity || 1), pw - 55, y, {align:'center'});
+                    doc.text('R' + parseFloat(i['Item Price'] || 0).toFixed(2), pw - 35, y, {align:'right'});
+                    doc.text('R' + parseFloat(i['Item Total'] || 0).toFixed(2), pw - 12, y, {align:'right'});
+                    y += 6;
+                });
+            } else {
+                doc.setFontSize(7.5); doc.setTextColor(160, 160, 160); doc.setFont(undefined, 'italic');
+                doc.text('No itemized data available', 12, y); y += 8; doc.setFont(undefined, 'normal');
+            }
+
+            y += 3; doc.setDrawColor(200, 200, 200); doc.setLineDashPattern([1.5, 1.5], 0);
+            doc.line(12, y, pw - 12, y); y += 6; doc.setLineDashPattern([], 0);
+
+            // Totals
+            doc.setFontSize(8); doc.setTextColor(0, 0, 0);
+            const lines = [
+                ['Gross Sale', txn.gross, false],
+                ['VAT', txn.vat, false],
+                ...(txn.discounts > 0 ? [['Discount', txn.discounts, true]] : []),
+                ...(txn.tip > 0 ? [['Tip', txn.tip, false]] : []),
+                ...(txn.refunds > 0 ? [['Refunds', txn.refunds, true]] : []),
+            ];
+            lines.forEach(([label, val, deduct]) => {
+                doc.setFont(undefined, 'normal'); doc.setTextColor(80, 80, 80);
+                doc.text(label, 12, y);
+                doc.setTextColor(deduct ? 180 : 0, deduct ? 40 : 0, 40 * (deduct ? 1 : 0));
+                doc.text((deduct ? '-' : '') + 'R' + val.toFixed(2), pw - 12, y, {align:'right'});
+                y += 6.5;
+            });
+
+            y += 2; doc.setDrawColor(...purple); doc.setLineWidth(0.4);
+            doc.line(12, y, pw - 12, y); y += 5;
+
+            // Net total highlight
+            doc.setFillColor(...lightPurple); doc.roundedRect(12, y - 2, pw - 24, 13, 2, 2, 'F');
+            doc.setFontSize(10); doc.setFont(undefined, 'bold'); doc.setTextColor(...purple);
+            doc.text('NET TOTAL', 16, y + 7);
+            doc.text('R' + txn.net.toFixed(2), pw - 16, y + 7, {align:'right'});
+            y += 18;
+
+            doc.setFontSize(6.5); doc.setTextColor(160, 160, 160); doc.setFont(undefined, 'normal');
+            doc.text('Thank you for your business', pw / 2, y, {align:'center'});
+            doc.text(`Generated: ${new Date().toLocaleString('en-ZA')}`, pw / 2, y + 5, {align:'center'});
+        }
+
+        async function rcptGetSiteName() {
+            try { const data = await localforage.getItem('yoco_portal_data'); if (data && data.info) { const r = data.info.find(r => r[0] === 'Site' || r[0] === 'Location'); if (r) return r[1]; } } catch(e){}
+            return 'YOCO Portal';
+        }
+
+        async function rcptDownloadSinglePDF(inv) {
+            const txn = receiptsAllTransactions.find(t => t.inv === inv);
+            if (!txn) return;
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF({ unit: 'mm', format: 'a5' });
+            rcptBuildPDF(doc, txn, await rcptGetSiteName());
+            doc.save(`Receipt_${inv.replace(/[^a-z0-9]/gi, '_')}.pdf`);
+        }
+
+        async function rcptDownloadCurrentPDF() {
+            if (rcptCurrentInv) await rcptDownloadSinglePDF(rcptCurrentInv);
+        }
+
+        async function rcptBulkDownloadPDF() {
+            if (receiptsSelected.size === 0) return;
+            const invList = [...receiptsSelected];
+            const siteName = await rcptGetSiteName();
+            const progress = document.getElementById('rcpt-pdf-progress');
+            const progressText = document.getElementById('rcpt-pdf-progress-text');
+            progress.style.display = 'block';
+
+            if (invList.length === 1) {
+                progressText.textContent = '1 / 1';
+                await rcptDownloadSinglePDF(invList[0]);
+                progress.style.display = 'none';
+                return;
+            }
+
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF({ unit: 'mm', format: 'a5' });
+            let added = 0;
+            invList.forEach((inv, idx) => {
+                progressText.textContent = `${idx + 1} / ${invList.length}`;
+                const txn = receiptsAllTransactions.find(t => t.inv === inv);
+                if (!txn) return;
+                if (added > 0) doc.addPage();
+                rcptBuildPDF(doc, txn, siteName);
+                added++;
+            });
+            doc.save(`Receipts_Bulk_${invList.length}_${new Date().toISOString().split('T')[0]}.pdf`);
+            progress.style.display = 'none';
+        }
+
+        function receiptsExportExcel() {
+            if (receiptsFiltered.length === 0) return;
+            const rows = receiptsFiltered.map((r, i) => ({
+                '#': i + 1, 'Invoice': r.inv, 'Order Number': r.orderNum || '',
+                'Date / Time': r.time || '', 'Staff': r.emp || '', 'Site': r.site || '',
+                'Payment Method': r.method, 'Gross (ZAR)': parseFloat(r.gross.toFixed(2)),
+                'VAT (ZAR)': parseFloat(r.vat.toFixed(2)), 'Discounts (ZAR)': parseFloat(r.discounts.toFixed(2)),
+                'Tip (ZAR)': parseFloat(r.tip.toFixed(2)), 'Net (ZAR)': parseFloat(r.net.toFixed(2)),
+            }));
+            const ws = XLSX.utils.json_to_sheet(rows); const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, 'Receipts Journal');
+            XLSX.writeFile(wb, `Receipts_Journal_${new Date().toISOString().split('T')[0]}.xlsx`);
+        }
+
+        // Event listeners
+        document.getElementById('rcpt-search').addEventListener('input', receiptsApplyFilters);
+        document.getElementById('rcpt-filter-emp').addEventListener('change', receiptsApplyFilters);
+        document.getElementById('rcpt-filter-method').addEventListener('change', receiptsApplyFilters);
+        document.getElementById('rcpt-rows-per-page').addEventListener('change', e => { receiptsRowsPerPage = parseInt(e.target.value); receiptsPage = 1; receiptsRender(); });
+        document.getElementById('rcpt-prev').addEventListener('click', () => { if (receiptsPage > 1) { receiptsPage--; receiptsRender(); } });
+        document.getElementById('rcpt-next').addEventListener('click', () => { const pages = Math.ceil(receiptsFiltered.length / receiptsRowsPerPage); if (receiptsPage < pages) { receiptsPage++; receiptsRender(); } });
+        document.getElementById('rcpt-select-all').addEventListener('change', function() {
+            const start = (receiptsPage - 1) * receiptsRowsPerPage;
+            const subset = receiptsFiltered.slice(start, start + receiptsRowsPerPage);
+            subset.forEach(r => { if (this.checked) receiptsSelected.add(r.inv); else receiptsSelected.delete(r.inv); });
+            rcptUpdateSelectionUI(); receiptsRender();
+        });
+
         // ═══ INITIALIZE ROUTER ═══
         window.addEventListener('popstate', async (e) => {
             const view = (e.state && e.state.view) || 'landing';
@@ -2088,6 +2880,8 @@
                 await showView('fraud');
             } else if (window.location.hash === '#sales') {
                 await showView('sales');
+            } else if (window.location.hash === '#receipts') {
+                await showView('receipts');
             }
             if (!localStorage.getItem('yoco_tutorial_seen')) {
                 showWelcome();
